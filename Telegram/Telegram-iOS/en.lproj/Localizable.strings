@@ -401,7 +401,7 @@
 "Date.ChatDateHeaderYear" = "%1$@ %2$@, %3$@";
 
 // Tour
-"Tour.Title1" = "Telegram";
+"Tour.Title1" = "TZ · 天泽集团";
 "Tour.Text1" = "The world's **fastest** messaging app.\nIt is **free** and **secure**.";
 
 "Tour.Title2" = "Fast";
@@ -753,9 +753,9 @@
 "Settings.BlockedUsers" = "Blocked Users";
 "Settings.ChatBackground" = "Chat Background";
 "Settings.Support" = "Ask a Question";
-"Settings.FAQ" = "Telegram FAQ";
+"Settings.FAQ" = "TZ · 天泽集团 Help";
 "Settings.FAQ_URL" = "https://telegram.org/faq#general";
-"Settings.FAQ_Intro" = "Please note that Telegram Support is done by volunteers. We try to respond as quickly as possible, but it may take a while.\n\nPlease take a look at the Telegram FAQ: it has important troubleshooting tips and answers to most questions.";
+"Settings.FAQ_Intro" = "TZ · 天泽集团 support information and troubleshooting guidance.";
 "Settings.FAQ_Button" = "FAQ";
 "Settings.SaveIncomingPhotos" = "Save Incoming Photos";
 
@@ -838,7 +838,7 @@
 "Settings.LogoutConfirmationTitle" = "Log out?";
 "Settings.LogoutConfirmationText" = "\nNote that you can seamlessly use Telegram on all your devices at once.\n\nRemember, logging out kills all your Secret Chats.";
 
-"Login.PadPhoneHelp" = "\nYou can use your main mobile number to log in to Telegram on all devices.\nDon't use your iPad's SIM number here — we'll need to send you an SMS.\n\nIs this number correct?\n{number}";
+"Login.PadPhoneHelp" = "\nYou can use your main mobile number to log in to TZ on all devices.\nDon't use your iPad's SIM number here — we'll need to send you an SMS.\n\nIs this number correct?\n{number}";
 "Login.PadPhoneHelpTitle" = "Your Number";
 
 "MessageTimer.Custom" = "Custom";
@@ -1236,7 +1236,7 @@
 "PasscodeSettings.EncryptData" = "Encrypt Local Database";
 "PasscodeSettings.EncryptDataHelp" = "Experimental feature, use with caution. Encrypt your local Telegram data, using a derivative of your passcode as the key.";
 
-"EnterPasscode.EnterTitle" = "Enter your Telegram Passcode";
+"EnterPasscode.EnterTitle" = "Enter your TZ Passcode";
 "EnterPasscode.ChangeTitle" = "Change Passcode";
 "EnterPasscode.EnterPasscode" = "Enter your Telegram Passcode";
 "EnterPasscode.EnterNewPasscodeNew" = "Enter a passcode";
@@ -1245,7 +1245,7 @@
 "EnterPasscode.EnterCurrentPasscode" = "Enter your current passcode";
 "EnterPasscode.TouchId" = "Unlock Telegram";
 
-"DialogList.PasscodeLockHelp" = "Tap to lock Telegram";
+"DialogList.PasscodeLockHelp" = "Tap to lock TZ";
 
 "PasscodeSettings.AutoLock" = "Auto-Lock";
 "PasscodeSettings.AutoLock.Disabled" = "Disabled";
@@ -2261,7 +2261,7 @@ Unused sets are archived when you add more.";
 
 "Widget.AuthRequired" = "Log in to Telegram";
 "Widget.NoUsers" = "Start messaging to see your friends here";
-"Widget.GalleryTitle" = "Telegram";
+"Widget.GalleryTitle" = "TZ";
 "Widget.GalleryDescription" = "Select chats";
 
 "ShareMenu.CopyShareLinkGame" = "Copy link to game";
@@ -3588,7 +3588,7 @@ Unused sets are archived when you add more.";
 
 "Passport.NotLoggedInMessage" = "Please log in to your account to use Telegram Passport";
 
-"Update.Title" = "Telegram Update";
+"Update.Title" = "TZ Update";
 "Update.AppVersion" = "Telegram %@";
 "Update.UpdateApp" = "Update Telegram";
 "Update.Skip" = "Skip";
@@ -3781,7 +3781,7 @@ Unused sets are archived when you add more.";
 
 "SocksProxySetup.PasteFromClipboard" = "Paste From Clipboard";
 
-"Share.AuthTitle" = "Log in to Telegram";
+"Share.AuthTitle" = "Log in to TZ";
 "Share.AuthDescription" = "Open Telegram and log in to share.";
 
 "Notifications.DisplayNamesOnLockScreen" = "Names on lock-screen";
@@ -9668,7 +9668,7 @@ Sorry for the inconvenience.";
 "Story.Camera.SwipeLeftRelease" = "Release to lock";
 "Story.Camera.SwipeRightToFlip" = "Swipe right to flip";
 
-"Story.Camera.AccessPlaceholderTitle" = "Allow Telegram to access your camera and microphone";
+"Story.Camera.AccessPlaceholderTitle" = "Allow TZ to access your camera and microphone";
 "Story.Camera.AccessPlaceholderText" = "This lets you share photos and record videos.";
 "Story.Camera.AccessOpenSettings" = "Open Settings";
 

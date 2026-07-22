@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "bundle_root": "com.tianze.tz",
+  "app_group": "group.com.tianze.tz",
+  "temporary_fake_team_id": "C67CF9S4VU",
+  "signing_status": "SELF_SIGNED_REQUIRES_FULL_RESIGN_NOT_APPLE_AUTHORIZED",
+  "targets": {
+    "main": "com.tianze.tz",
+    "share": "com.tianze.tz.Share",
+    "notification_content": "com.tianze.tz.NotificationContent",
+    "notification_service": "com.tianze.tz.NotificationService",
+    "widget": "com.tianze.tz.Widget",
+    "siri_intents": "com.tianze.tz.SiriIntents",
+    "broadcast_upload": "com.tianze.tz.BroadcastUpload"
+  },
+  "watch_targets_disabled": {
+    "watch_app": "com.tianze.tz.watchkitapp",
+    "watch_extension": "com.tianze.tz.watchkitapp.watchkitextension"
+  },
+  "gateway": {
+    "host": "tztg.tianze8.cc",
+    "port": 2398,
+    "numeric_origin_addresses_allowed_in_tz_configuration": false
+  },
+  "fake_build_entitlements": {
+    "main": [
+      "application-identifier",
+      "aps-environment=development",
+      "com.apple.developer.team-identifier",
+      "com.apple.security.application-groups",
+      "keychain-access-groups"
+    ],
+    "extensions": [
+      "application-identifier",
+      "com.apple.developer.team-identifier",
+      "com.apple.security.application-groups",
+      "keychain-access-groups"
+    ]
+  },
+  "restricted_entitlements_removed": [
+    "com.apple.developer.applesignin",
+    "com.apple.developer.associated-domains",
+    "com.apple.developer.background-tasks.continued-processing.gpu",
+    "com.apple.developer.carplay-messaging",
+    "com.apple.developer.icloud-container-identifiers",
+    "com.apple.developer.icloud-services",
+    "com.apple.developer.in-app-payments",
+    "com.apple.developer.pushkit.unrestricted-voip",
+    "com.apple.developer.siri",
+    "com.apple.developer.ubiquity-kvstore-identifier",
+    "com.apple.developer.usernotifications.communication",
+    "com.apple.developer.usernotifications.filtering"
+  ]
+}

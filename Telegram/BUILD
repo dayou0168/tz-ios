@@ -52,6 +52,7 @@ load(
     "telegram_team_id",
     "telegram_enable_icloud",
     "telegram_enable_siri",
+    "telegram_app_specific_url_scheme",
 )
 
 load("@build_bazel_rules_apple//apple:resources.bzl",
@@ -316,20 +317,7 @@ filegroup(
     ]),
 )
 
-alternate_icon_folders = [
-    "BlackIcon",
-    "BlackClassicIcon",
-    "BlackFilledIcon",
-    "BlueIcon",
-    "BlueClassicIcon",
-    "BlueFilledIcon",
-    "WhiteFilledIcon",
-    "New1",
-    "New2",
-    "Premium",
-    "PremiumBlack",
-    "PremiumTurbo",
-]
+alternate_icon_folders = []
 
 composer_icon_folders = ["Telegram"]
 
@@ -420,23 +408,13 @@ plist_fragment(
             <string>{telegram_bundle_id}</string>
             <key>CFBundleURLSchemes</key>
             <array>
-                <string>telegram</string>
-            </array>
-        </dict>
-        <dict>
-            <key>CFBundleTypeRole</key>
-            <string>Viewer</string>
-            <key>CFBundleURLName</key>
-            <string>{telegram_bundle_id}.compatibility</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>tg</string>
-                <string>tonsite</string>
+                <string>{telegram_app_specific_url_scheme}</string>
             </array>
         </dict>
     </array>
     """.format(
         telegram_bundle_id = telegram_bundle_id,
+        telegram_app_specific_url_scheme = telegram_app_specific_url_scheme,
     )
 )
 
@@ -629,7 +607,7 @@ plist_fragment(
     template =
     """
     <key>CFBundleDisplayName</key>
-    <string>Telegram</string>
+    <string>TZ</string>
     """
 )
 
@@ -962,7 +940,7 @@ plist_fragment(
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}.Share</string>
     <key>CFBundleName</key>
-    <string>Telegram</string>
+    <string>TZ</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>NSExtension</key>
@@ -1054,7 +1032,7 @@ plist_fragment(
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}.NotificationContent</string>
     <key>CFBundleName</key>
-    <string>Telegram</string>
+    <string>TZ</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>NSExtension</key>
@@ -1161,7 +1139,7 @@ plist_fragment(
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}.Widget</string>
     <key>CFBundleName</key>
-    <string>Telegram</string>
+    <string>TZ</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>NSExtension</key>
@@ -1274,7 +1252,7 @@ plist_fragment(
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}.SiriIntents</string>
     <key>CFBundleName</key>
-    <string>Telegram</string>
+    <string>TZ</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>NSExtension</key>
@@ -1405,7 +1383,7 @@ plist_fragment(
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}.BroadcastUpload</string>
     <key>CFBundleName</key>
-    <string>Telegram</string>
+    <string>TZ</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>NSExtension</key>
@@ -1499,7 +1477,7 @@ plist_fragment(
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}.NotificationService</string>
     <key>CFBundleName</key>
-    <string>Telegram</string>
+    <string>TZ</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>NSExtension</key>
@@ -1568,15 +1546,21 @@ plist_fragment(
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleDisplayName</key>
-    <string>Telegram</string>
+    <string>TZ</string>
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}</string>
     <key>CFBundleName</key>
-    <string>Telegram</string>
+    <string>TZ</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleSignature</key>
     <string>????</string>
+    <key>TZGatewayHost</key>
+    <string>tztg.tianze8.cc</string>
+    <key>TZGatewayPort</key>
+    <integer>2398</integer>
+    <key>TZSigningStatus</key>
+    <string>REQUIRES-FULL-RESIGN</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSApplicationQueriesSchemes</key>
@@ -1630,17 +1614,17 @@ plist_fragment(
     <key>NSCameraUsageDescription</key>
     <string>We need this so that you can take and share photos and videos.</string>
     <key>NSContactsUsageDescription</key>
-    <string>Telegram stores your contacts heavily encrypted in the cloud to let you connect with your friends across all your devices.</string>
+    <string>TZ (天泽集团) securely synchronizes your contacts so you can connect across your devices.</string>
     <key>NSFaceIDUsageDescription</key>
     <string>You can use Face ID to unlock the app.</string>
     <key>NSLocationAlwaysUsageDescription</key>
-    <string>When you send your location to your friends, Telegram needs access to show them a map. You also need this to send locations from an Apple Watch.</string>
+    <string>TZ (天泽集团) needs location access to share your location and show it on a map.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>When you send your location to your friends, Telegram needs access to show them a map.</string>
+    <string>TZ (天泽集团) needs location access to share your location and show it on a map.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>We need this so that you can record and share voice messages and videos with sound.</string>
     <key>NSMotionUsageDescription</key>
-    <string>When you send your location to your friends, Telegram needs access to show them a map.</string>
+    <string>TZ (天泽集团) needs motion and location access for location sharing.</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>We need this so that you can share photos and videos from your photo library.</string>
     <key>NSPhotoLibraryUsageDescription</key>
@@ -1708,18 +1692,18 @@ plist_fragment(
                 <string>public.data</string>
             </array>
             <key>UTTypeDescription</key>
-            <string>Telegram iOS Color Theme File</string>
+            <string>TZ iOS Color Theme File</string>
             <key>UTTypeIconFiles</key>
             <array>
                 <string>BlueIcon@3x.png</string>
             </array>
             <key>UTTypeIdentifier</key>
-            <string>org.telegram.Telegram-iOS.theme</string>
+            <string>com.tianze.tz.theme</string>
             <key>UTTypeTagSpecification</key>
             <dict>
                 <key>public.filename-extension</key>
                 <array>
-                    <string>tgios-theme</string>
+                    <string>tz-theme</string>
                 </array>
             </dict>
         </dict>

@@ -459,6 +459,12 @@ public struct NetworkInitializationArguments {
         self.isICloudEnabled = isICloudEnabled
     }
 }
+
+// TZ routes every logical Telegram datacenter through the project gateway.
+// Keep this as a hostname: no origin address belongs in source or build logs.
+private let tzGatewayHost = "tztg.tianze8.cc"
+private let tzGatewayPort: UInt16 = 2398
+
 #if os(iOS)
 private let cloudDataContext = Atomic<CloudDataContext?>(value: nil)
 #endif
@@ -485,6 +491,20 @@ func initializedNetwork(accountId: AccountRecordId, arguments: NetworkInitializa
             
             apiEnvironment = apiEnvironment.withUpdatedNetworkSettings((networkSettings ?? NetworkSettings.defaultSettings).mtNetworkSettings)
             apiEnvironment.accessHostOverride = networkSettings?.backupHostOverride
+
+            var tzDatacenterAddressOverrides: [NSNumber: MTDatacenterAddress] = [:]
+            for datacenterId in 1 ... 5 {
+                tzDatacenterAddressOverrides[NSNumber(value: datacenterId)] = MTDatacenterAddress(
+                    ip: tzGatewayHost,
+                    port: tzGatewayPort,
+                    preferForMedia: false,
+                    restrictToTcp: true,
+                    cdn: false,
+                    preferForProxy: false,
+                    secret: nil
+                )
+            }
+            apiEnvironment.datacenterAddressOverrides = tzDatacenterAddressOverrides
             
             var appDataUpdatedImpl: ((Data?) -> Void)?
             let syncValue = Atomic<Data?>(value: nil)
@@ -526,26 +546,12 @@ func initializedNetwork(accountId: AccountRecordId, arguments: NetworkInitializa
                 }
             }
             
-            let seedAddressList: [Int: [String]]
-            
-            if testingEnvironment {
-                seedAddressList = [
-                    1: ["149.154.175.10"],
-                    2: ["149.154.167.40"],
-                    3: ["149.154.175.117"]
-                ]
-            } else {
-                seedAddressList = [
-                    1: ["149.154.175.50", "2001:b28:f23d:f001::a"],
-                    2: ["149.154.167.50", "95.161.76.100", "2001:67c:4e8:f002::a"],
-                    3: ["149.154.175.100", "2001:b28:f23d:f003::a"],
-                    4: ["149.154.167.91", "2001:67c:4e8:f004::a"],
-                    5: ["149.154.171.5", "2001:b28:f23f:f005::a"]
-                ]
-            }
+            let seedAddressList: [Int: [String]] = Dictionary(uniqueKeysWithValues: (1 ... 5).map { datacenterId in
+                return (datacenterId, [tzGatewayHost])
+            })
             
             for (id, ips) in seedAddressList {
-                context.setSeedAddressSetForDatacenterWithId(id, seedAddressSet: MTDatacenterAddressSet(addressList: ips.map { MTDatacenterAddress(ip: $0, port: 443, preferForMedia: false, restrictToTcp: false, cdn: false, preferForProxy: false, secret: nil) }))
+                context.setSeedAddressSetForDatacenterWithId(id, seedAddressSet: MTDatacenterAddressSet(addressList: ips.map { MTDatacenterAddress(ip: $0, port: tzGatewayPort, preferForMedia: false, restrictToTcp: true, cdn: false, preferForProxy: false, secret: nil) }))
             }
             
             context.keychain = keychain

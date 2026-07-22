@@ -32,10 +32,10 @@ jobs:
       TZ_EXPECTED_BAZEL: "8.4.2"
       TZ_EXPECTED_BAZEL_SHA256: 45e9388abf21d1107e146ea366ad080eb93cb6a5f3a4a3b048f78de0bc3faffa
       TZ_EXPECTED_APP_VERSION: "1.0.1"
+      TZ_EXPECTED_BUNDLE_ID: com.tianze.tz
       BAZEL_BINARY: ${{ github.workspace }}/build-input/bazel-8.4.2-darwin-arm64
       TZ_IOS_API_ID: ${{ secrets.TZ_IOS_API_ID }}
       TZ_IOS_API_HASH: ${{ secrets.TZ_IOS_API_HASH }}
-      TZ_IOS_EXPECTED_ENDPOINT: ${{ secrets.TZ_IOS_EXPECTED_ENDPOINT }}
 
     steps:
       - name: Check out the private TZ source snapshot
@@ -54,6 +54,7 @@ jobs:
             echo "TZ_BUILD_OUTPUT=$RUNNER_TEMP/tz-build-output"
             echo "TZ_VERIFIED_OUTPUT=$RUNNER_TEMP/tz-verified-output"
             echo "TZ_BUILD_CONFIG=$RUNNER_TEMP/tz-ios-build-configuration.json"
+            echo "TZ_FAKE_SIGNING=$RUNNER_TEMP/tz-fake-signing"
           } >> "$GITHUB_ENV"
 
       - name: Enforce private repository and locked upstream ancestry
@@ -77,10 +78,8 @@ jobs:
           set -euo pipefail
           test -n "$TZ_IOS_API_ID"
           test -n "$TZ_IOS_API_HASH"
-          test -n "$TZ_IOS_EXPECTED_ENDPOINT"
           echo "::add-mask::$TZ_IOS_API_ID"
           echo "::add-mask::$TZ_IOS_API_HASH"
-          echo "::add-mask::$TZ_IOS_EXPECTED_ENDPOINT"
           [[ "${{ inputs.build_number }}" =~ ^[0-9]+$ ]]
 
       - name: Select the upstream-required Xcode exactly
@@ -99,15 +98,11 @@ jobs:
           xcodebuild -version
           df -h /
 
-      - name: Enforce the TZ source version gate
+      - name: Enforce TZ source, bundle, brand, gateway, and entitlement gates
         shell: bash
         run: |
           set -euo pipefail
-          actual_version="$(python3 -c 'import json; print(json.load(open("versions.json"))["app"])')"
-          if test "$actual_version" != "$TZ_EXPECTED_APP_VERSION"; then
-            echo "source version is $actual_version; TZ branding/version work is not complete" >&2
-            exit 1
-          fi
+          python3 scripts/tz_ios_verify_source.py
 
       - name: Render secret build configuration
         shell: bash
@@ -146,13 +141,17 @@ jobs:
           cat "$RUNNER_TEMP/cache-state.txt"
           cat "$RUNNER_TEMP/cache-inputs.sha256"
 
-      - name: Import only the upstream self-signed fake certificate
+      - name: Prepare TZ-specific self-signed fake profiles
         shell: bash
         run: |
           set -euo pipefail
           test "$(shasum -a 256 build-system/fake-codesigning/certs/Public.cer | awk '{print $1}')" = "eccdeb43dd50f4abdadf0dc6204c314298c16005567fcbf5d0a20a5761a93ba4"
+          python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
+          python3 scripts/tz_ios_prepare_fake_signing.py \
+            --source build-system/fake-codesigning \
+            --output "$TZ_FAKE_SIGNING"
           profile_plist="$RUNNER_TEMP/fake-profile.plist"
-          security cms -D -i build-system/fake-codesigning/profiles/Telegram.mobileprovision > "$profile_plist"
+          security cms -D -i "$TZ_FAKE_SIGNING/profiles/Telegram.mobileprovision" > "$profile_plist"
           python3 - "$profile_plist" <<'PY'
           import datetime
           import plistlib
@@ -165,7 +164,6 @@ jobs:
               raise SystemExit("locked upstream fake provisioning profile is expired")
           print(f"fake profile expiration verified: {expiration.isoformat()}Z")
           PY
-          python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
 
       - name: Build release_arm64 with fake signing
         id: build_app
@@ -177,7 +175,7 @@ jobs:
             --bazel="$BAZEL_BINARY" \
             build \
             --configurationPath="$TZ_BUILD_CONFIG" \
-            --codesigningInformationPath=build-system/fake-codesigning \
+            --codesigningInformationPath="$TZ_FAKE_SIGNING" \
             --configuration=release_arm64 \
             --buildNumber='${{ inputs.build_number }}' \
             --outputBuildArtifactsPath="$TZ_BUILD_OUTPUT" \
@@ -201,13 +199,14 @@ jobs:
           set -euo pipefail
           python3 scripts/tz_ios_verify_ipa.py "$TZ_BUILD_OUTPUT/Telegram.ipa" "$TZ_VERIFIED_OUTPUT"
           cp TZ_UPSTREAM.lock "$TZ_VERIFIED_OUTPUT/"
+          cp TZ_IOS_IDENTITIES.json "$TZ_VERIFIED_OUTPUT/"
           cp "$RUNNER_TEMP/submodules.txt" "$TZ_VERIFIED_OUTPUT/SUBMODULES.txt"
           cp "$RUNNER_TEMP/cache-state.txt" "$TZ_VERIFIED_OUTPUT/CACHE_STATE.txt"
           cp "$RUNNER_TEMP/cache-inputs.sha256" "$TZ_VERIFIED_OUTPUT/CACHE_INPUTS_SHA256.txt"
           git rev-parse HEAD > "$TZ_VERIFIED_OUTPUT/TZ_SOURCE_COMMIT.txt"
           printf '%s\n' \
             'NOT DIRECTLY INSTALLABLE' \
-            'Fake self-signed certificate and temporary upstream bundle identity.' \
+            'Fake self-signed certificate and temporary TZ bundle identity.' \
             'Every app and extension must be re-signed with matching identifiers, entitlements, and profiles.' \
             'Installation and runtime were not executed by this workflow.' \
             > "$TZ_VERIFIED_OUTPUT/REQUIRES_FULL_RESIGN.txt"

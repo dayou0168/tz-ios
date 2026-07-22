@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import plistlib
 import shutil
 import subprocess
@@ -17,9 +16,35 @@ from pathlib import Path
 
 EXPECTED_VERSION = "1.0.1"
 EXPECTED_BRAND = "TZ"
-TEMPORARY_BUNDLE_ID = "ph.telegra.Telegraph"
+EXPECTED_BUNDLE_ID = "com.tianze.tz"
+EXPECTED_APP_GROUP = "group.com.tianze.tz"
+EXPECTED_ENDPOINT_HOST = "tztg.tianze8.cc"
+EXPECTED_ENDPOINT_PORT = 2398
+FAKE_TEAM_ID = "C67CF9S4VU"
 FAKE_SIGNING_AUTHORITY = "Authority=Apple Distribution: Telegram FZ-LLC (C67CF9S4VU)"
 FAKE_CERT_SHA256 = "eccdeb43dd50f4abdadf0dc6204c314298c16005567fcbf5d0a20a5761a93ba4"
+EXPECTED_EXTENSION_IDS = {
+    "com.tianze.tz.Share",
+    "com.tianze.tz.NotificationContent",
+    "com.tianze.tz.NotificationService",
+    "com.tianze.tz.Widget",
+    "com.tianze.tz.SiriIntents",
+    "com.tianze.tz.BroadcastUpload",
+}
+RESTRICTED_ENTITLEMENTS = {
+    "com.apple.developer.applesignin",
+    "com.apple.developer.associated-domains",
+    "com.apple.developer.background-tasks.continued-processing.gpu",
+    "com.apple.developer.carplay-messaging",
+    "com.apple.developer.icloud-container-identifiers",
+    "com.apple.developer.icloud-services",
+    "com.apple.developer.in-app-payments",
+    "com.apple.developer.pushkit.unrestricted-voip",
+    "com.apple.developer.siri",
+    "com.apple.developer.ubiquity-kvstore-identifier",
+    "com.apple.developer.usernotifications.communication",
+    "com.apple.developer.usernotifications.filtering",
+}
 
 
 def run(*arguments: str) -> subprocess.CompletedProcess[str]:
@@ -51,7 +76,35 @@ def load_info(bundle: Path) -> dict:
         return plistlib.load(stream)
 
 
-def verify_bundle(bundle: Path, main_bundle_id: str) -> dict:
+def read_codesign_entitlements(bundle: Path) -> dict:
+    result = run("codesign", "-d", "--entitlements", ":-", str(bundle))
+    text = result.stdout + result.stderr
+    start = text.find("<?xml")
+    end = text.find("</plist>")
+    if result.returncode != 0 or start < 0 or end < 0:
+        raise SystemExit(f"could not extract signed entitlements from {bundle}")
+    return plistlib.loads(text[start : end + len("</plist>")].encode("utf-8"))
+
+
+def verify_entitlements(bundle_id: str, entitlements: dict, *, is_main: bool) -> None:
+    expected_application_id = f"{FAKE_TEAM_ID}.{bundle_id}"
+    if entitlements.get("application-identifier") != expected_application_id:
+        raise SystemExit(f"application-identifier mismatch for {bundle_id}")
+    if entitlements.get("com.apple.developer.team-identifier") != FAKE_TEAM_ID:
+        raise SystemExit(f"fake team identifier mismatch for {bundle_id}")
+    if entitlements.get("com.apple.security.application-groups") != [EXPECTED_APP_GROUP]:
+        raise SystemExit(f"App Group mismatch for {bundle_id}")
+    forbidden = sorted(RESTRICTED_ENTITLEMENTS.intersection(entitlements))
+    if forbidden:
+        raise SystemExit(f"restricted Apple entitlements found in {bundle_id}: {forbidden}")
+    aps_environment = entitlements.get("aps-environment")
+    if is_main and aps_environment != "development":
+        raise SystemExit("main app fake APS entitlement must be development")
+    if not is_main and aps_environment is not None:
+        raise SystemExit(f"unexpected APS entitlement on extension {bundle_id}")
+
+
+def verify_bundle(bundle: Path, main_bundle_id: str, report_root: Path, *, require_entitlements: bool) -> dict:
     info = load_info(bundle)
     executable_name = info.get("CFBundleExecutable")
     bundle_id = info.get("CFBundleIdentifier")
@@ -61,6 +114,13 @@ def verify_bundle(bundle: Path, main_bundle_id: str) -> dict:
         raise SystemExit(f"CFBundleIdentifier is missing in {bundle}")
     if bundle_id != main_bundle_id and not bundle_id.startswith(main_bundle_id + "."):
         raise SystemExit(f"nested bundle identifier is outside the main prefix: {bundle_id}")
+    if bundle.suffix in {".app", ".appex"}:
+        version = info.get("CFBundleShortVersionString")
+        brand = info.get("CFBundleDisplayName") or info.get("CFBundleName")
+        if version != EXPECTED_VERSION:
+            raise SystemExit(f"version mismatch in {bundle_id}: {version!r}")
+        if brand != EXPECTED_BRAND:
+            raise SystemExit(f"brand mismatch in {bundle_id}: {brand!r}")
 
     executable = bundle / executable_name
     if not executable.is_file():
@@ -82,18 +142,23 @@ def verify_bundle(bundle: Path, main_bundle_id: str) -> dict:
     if FAKE_SIGNING_AUTHORITY not in signing_text:
         raise SystemExit(f"unexpected signing authority for {bundle_id}; refusing to mislabel signature state")
 
+    if require_entitlements:
+        verify_entitlements(bundle_id, read_codesign_entitlements(bundle), is_main=bundle_id == main_bundle_id)
+        verify_fake_profile(bundle, bundle_id)
+
     return {
-        "relative_path": str(bundle),
+        "relative_path": str(bundle.relative_to(report_root)),
         "bundle_id": bundle_id,
         "architectures": architectures,
         "fake_signing_authority_confirmed": True,
+        "restricted_entitlements_absent": require_entitlements,
     }
 
 
-def verify_fake_profile(app: Path) -> None:
-    profile = app / "embedded.mobileprovision"
+def verify_fake_profile(bundle: Path, expected_bundle_id: str) -> None:
+    profile = bundle / "embedded.mobileprovision"
     if not profile.is_file():
-        raise SystemExit("main app is missing embedded.mobileprovision")
+        raise SystemExit(f"bundle is missing embedded.mobileprovision: {expected_bundle_id}")
     result = run("security", "cms", "-D", "-i", str(profile))
     if result.returncode != 0:
         raise SystemExit(f"could not decode embedded.mobileprovision: {result.stderr.strip()}")
@@ -102,13 +167,18 @@ def verify_fake_profile(app: Path) -> None:
     fingerprints = {hashlib.sha256(bytes(certificate)).hexdigest() for certificate in certificates}
     if FAKE_CERT_SHA256 not in fingerprints:
         raise SystemExit("embedded profile does not contain the locked upstream fake certificate")
+    entitlements = data.get("Entitlements", {})
+    verify_entitlements(expected_bundle_id, entitlements, is_main=expected_bundle_id == EXPECTED_BUNDLE_ID)
 
 
-def verify_endpoint(root: Path) -> None:
-    expected = os.environ.get("TZ_IOS_EXPECTED_ENDPOINT", "")
-    if len(expected) < 8:
-        raise SystemExit("TZ_IOS_EXPECTED_ENDPOINT is missing or implausibly short")
-    needle = expected.encode("utf-8")
+def verify_endpoint(root: Path, info: dict) -> None:
+    if info.get("TZGatewayHost") != EXPECTED_ENDPOINT_HOST:
+        raise SystemExit("main Info.plist TZGatewayHost mismatch")
+    if info.get("TZGatewayPort") != EXPECTED_ENDPOINT_PORT:
+        raise SystemExit("main Info.plist TZGatewayPort mismatch")
+    if info.get("TZSigningStatus") != "REQUIRES-FULL-RESIGN":
+        raise SystemExit("main Info.plist does not disclose the fake-signing boundary")
+    needle = EXPECTED_ENDPOINT_HOST.encode("utf-8")
     for path in root.rglob("*"):
         if not path.is_file() or path.stat().st_size > 1024 * 1024 * 1024:
             continue
@@ -149,15 +219,35 @@ def main() -> int:
             raise SystemExit(f"unexpected app version: {version!r}; expected {EXPECTED_VERSION!r}")
         if brand != EXPECTED_BRAND:
             raise SystemExit(f"unexpected app brand: {brand!r}; expected {EXPECTED_BRAND!r}")
-        if bundle_id != TEMPORARY_BUNDLE_ID:
-            raise SystemExit("fake-signing build must use the documented temporary bundle identity")
+        if bundle_id != EXPECTED_BUNDLE_ID:
+            raise SystemExit(f"unexpected main Bundle ID: {bundle_id!r}")
 
-        verify_endpoint(extracted)
-        verify_fake_profile(app)
+        verify_endpoint(extracted, info)
 
-        bundles = [app]
-        bundles.extend(sorted(path for path in app.rglob("*.appex") if path.is_dir()))
-        bundle_reports = [verify_bundle(bundle, bundle_id) for bundle in bundles]
+        code_verify = run("codesign", "--verify", "--deep", "--strict", str(app))
+        if code_verify.returncode != 0:
+            raise SystemExit(f"fake signature integrity check failed: {code_verify.stderr.strip()}")
+
+        extensions = sorted(path for path in app.rglob("*.appex") if path.is_dir())
+        extension_ids = {load_info(path).get("CFBundleIdentifier") for path in extensions}
+        if None in extension_ids:
+            raise SystemExit("an extension is missing CFBundleIdentifier")
+        if extension_ids != EXPECTED_EXTENSION_IDS:
+            raise SystemExit(
+                f"extension Bundle ID set mismatch: missing={sorted(EXPECTED_EXTENSION_IDS - extension_ids)}, "
+                f"unexpected={sorted(extension_ids - EXPECTED_EXTENSION_IDS)}"
+            )
+        if (app / "Watch").exists():
+            raise SystemExit("Watch app is unexpectedly embedded without a finalized Apple identity")
+
+        frameworks = sorted(path for path in app.rglob("*.framework") if path.is_dir())
+        bundle_reports = [verify_bundle(app, bundle_id, payload, require_entitlements=True)]
+        bundle_reports.extend(
+            verify_bundle(bundle, bundle_id, payload, require_entitlements=True) for bundle in extensions
+        )
+        bundle_reports.extend(
+            verify_bundle(bundle, bundle_id, payload, require_entitlements=False) for bundle in frameworks
+        )
 
     final_ipa = output / "TZ-1.0.1-ios-arm64-REQUIRES-FULL-RESIGN.ipa"
     shutil.copy2(ipa, final_ipa)
@@ -170,8 +260,11 @@ def main() -> int:
         "sha256": ipa_sha256,
         "version": EXPECTED_VERSION,
         "brand": EXPECTED_BRAND,
-        "endpoint_static_check": "present_without_disclosure",
-        "bundle_identity": "TEMPORARY_UPSTREAM_FAKE_SIGNING_IDENTITY_NOT_TZ_LONG_TERM_IDENTITY",
+        "endpoint_static_check": "hostname_and_port_confirmed",
+        "bundle_id": EXPECTED_BUNDLE_ID,
+        "app_group": EXPECTED_APP_GROUP,
+        "extensions": sorted(EXPECTED_EXTENSION_IDS),
+        "bundle_identity": "TZ_BUNDLE_NAMESPACE_WITH_TEMPORARY_SELF_SIGNED_TEAM_NOT_LONG_TERM_APPLE_IDENTITY",
         "signature_status": "FAKE_SELF_SIGNED_REQUIRES_FULL_RESIGN_NOT_DIRECTLY_INSTALLABLE",
         "install_tested": False,
         "runtime_tested": False,

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Render the ephemeral configuration used by the fake-signing build.
 
-The temporary bundle/team identity deliberately matches Telegram-iOS's checked-in
-fake provisioning profiles. It is not TZ's long-term Apple identity.
+The temporary TZ bundle namespace is paired with runtime-generated self-signed
+profiles. The fake team identifier is not TZ's long-term Apple identity.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 
-TEMPORARY_BUNDLE_ID = "ph.telegra.Telegraph"
+TZ_BUNDLE_ID = "com.tianze.tz"
 TEMPORARY_TEAM_ID = "C67CF9S4VU"
 
 
@@ -38,7 +38,7 @@ def main() -> int:
         raise SystemExit("TZ_IOS_API_HASH must contain exactly 32 hexadecimal characters")
 
     configuration = {
-        "bundle_id": TEMPORARY_BUNDLE_ID,
+        "bundle_id": TZ_BUNDLE_ID,
         "api_id": api_id,
         "api_hash": api_hash,
         "team_id": TEMPORARY_TEAM_ID,
