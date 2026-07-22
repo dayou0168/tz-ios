@@ -1,5 +1,11 @@
 name: CI
 
+# Disabled in the TZ worktree. The upstream workflow creates a GitHub Release
+# from a fake-signed IPA and must never be used as TZ release evidence.
+
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ master ]
@@ -8,6 +14,7 @@ on:
 
 jobs:
   build:
+    if: ${{ false }}
     runs-on: macos-13
 
     steps:

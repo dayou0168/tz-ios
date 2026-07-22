@@ -1,0 +1,20 @@
+{
+  "repository": "https://github.com/TelegramMessenger/Telegram-iOS.git",
+  "default_branch": "master",
+  "commit": "6ad963e5b62d354da79040f388ae2b9132fb17b8",
+  "commit_date_utc": "2026-07-17T16:47:37Z",
+  "verified_at": "2026-07-22",
+  "versions": {
+    "app": "12.9.2",
+    "macos": "26",
+    "xcode": "26.2",
+    "bazel": "8.4.2",
+    "bazel_sha256": "45e9388abf21d1107e146ea366ad080eb93cb6a5f3a4a3b048f78de0bc3faffa"
+  },
+  "license": {
+    "root_license_file": null,
+    "github_spdx_id": null,
+    "github_license_api": "404 Not Found",
+    "status": "REQUIRES_LEGAL_REVIEW_BEFORE_DISTRIBUTION"
+  }
+}

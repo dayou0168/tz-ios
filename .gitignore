@@ -84,3 +84,12 @@ xcode-files
 **/node_modules/
 tools/sim-watcher/dist/
 .mcp.json
+
+# TZ private build inputs must stay outside version control.
+/.tz-private/
+/tz-private/
+*.p12
+*.cer
+*.mobileprovision
+*-private-configuration.json
+*secret*configuration*.json

@@ -1,0 +1,5 @@
+paths:
+  .github/workflows/tz-ios-macos-build.yml:
+    ignore:
+      # actionlint 1.7.7 predates GitHub's official macos-26 label.
+      - 'label "macos-26" is unknown'
