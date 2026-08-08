@@ -86,12 +86,21 @@ def read_codesign_entitlements(bundle: Path) -> dict:
     return plistlib.loads(text[start : end + len("</plist>")].encode("utf-8"))
 
 
-def verify_entitlements(bundle_id: str, entitlements: dict, *, is_main: bool) -> None:
+def verify_entitlements(
+    bundle_id: str,
+    entitlements: dict,
+    *,
+    is_main: bool,
+    require_team_identifier: bool,
+) -> None:
     expected_application_id = f"{FAKE_TEAM_ID}.{bundle_id}"
     if entitlements.get("application-identifier") != expected_application_id:
         raise SystemExit(f"application-identifier mismatch for {bundle_id}")
-    if entitlements.get("com.apple.developer.team-identifier") != FAKE_TEAM_ID:
+    team_identifier = entitlements.get("com.apple.developer.team-identifier")
+    if require_team_identifier and team_identifier != FAKE_TEAM_ID:
         raise SystemExit(f"fake team identifier mismatch for {bundle_id}")
+    if not require_team_identifier and team_identifier not in (None, FAKE_TEAM_ID):
+        raise SystemExit(f"unexpected team identifier for {bundle_id}: {team_identifier!r}")
     if entitlements.get("com.apple.security.application-groups") != [EXPECTED_APP_GROUP]:
         raise SystemExit(f"App Group mismatch for {bundle_id}")
     forbidden = sorted(RESTRICTED_ENTITLEMENTS.intersection(entitlements))
@@ -143,7 +152,12 @@ def verify_bundle(bundle: Path, main_bundle_id: str, report_root: Path, *, requi
         raise SystemExit(f"unexpected signing authority for {bundle_id}; refusing to mislabel signature state")
 
     if require_entitlements:
-        verify_entitlements(bundle_id, read_codesign_entitlements(bundle), is_main=bundle_id == main_bundle_id)
+        verify_entitlements(
+            bundle_id,
+            read_codesign_entitlements(bundle),
+            is_main=bundle_id == main_bundle_id,
+            require_team_identifier=False,
+        )
         verify_fake_profile(bundle, bundle_id)
 
     return {
@@ -168,7 +182,12 @@ def verify_fake_profile(bundle: Path, expected_bundle_id: str) -> None:
     if FAKE_CERT_SHA256 not in fingerprints:
         raise SystemExit("embedded profile does not contain the locked upstream fake certificate")
     entitlements = data.get("Entitlements", {})
-    verify_entitlements(expected_bundle_id, entitlements, is_main=expected_bundle_id == EXPECTED_BUNDLE_ID)
+    verify_entitlements(
+        expected_bundle_id,
+        entitlements,
+        is_main=expected_bundle_id == EXPECTED_BUNDLE_ID,
+        require_team_identifier=True,
+    )
 
 
 def verify_endpoint(root: Path, info: dict) -> None:
