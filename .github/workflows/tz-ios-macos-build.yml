@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   build:
-    if: ${{ github.event.repository.private == true && inputs.acknowledge_not_installable == true }}
+    if: ${{ inputs.acknowledge_not_installable == true }}
     runs-on: macos-26
     timeout-minutes: 360
     env:
@@ -31,14 +31,14 @@ jobs:
       TZ_EXPECTED_XCODE: "26.2"
       TZ_EXPECTED_BAZEL: "8.4.2"
       TZ_EXPECTED_BAZEL_SHA256: 45e9388abf21d1107e146ea366ad080eb93cb6a5f3a4a3b048f78de0bc3faffa
-      TZ_EXPECTED_APP_VERSION: "1.0.1"
+      TZ_EXPECTED_APP_VERSION: "1.0.0"
       TZ_EXPECTED_BUNDLE_ID: com.tianze.tz
       BAZEL_BINARY: ${{ github.workspace }}/build-input/bazel-8.4.2-darwin-arm64
       TZ_IOS_API_ID: ${{ secrets.TZ_IOS_API_ID }}
       TZ_IOS_API_HASH: ${{ secrets.TZ_IOS_API_HASH }}
 
     steps:
-      - name: Check out the private TZ source snapshot
+      - name: Check out the TZ source snapshot
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
@@ -57,11 +57,10 @@ jobs:
             echo "TZ_FAKE_SIGNING=$RUNNER_TEMP/tz-fake-signing"
           } >> "$GITHUB_ENV"
 
-      - name: Enforce private repository and locked upstream ancestry
+      - name: Enforce locked upstream ancestry
         shell: bash
         run: |
           set -euo pipefail
-          test "${{ github.event.repository.private }}" = "true"
           test "$(git config --get remote.origin.url)" != "https://github.com/TelegramMessenger/Telegram-iOS.git"
           test "$(python3 -c 'import json; print(json.load(open("TZ_UPSTREAM.lock"))["commit"])')" = "$TZ_UPSTREAM_SHA"
           git cat-file -e "$TZ_UPSTREAM_SHA^{commit}"
@@ -223,7 +222,7 @@ jobs:
         id: upload_candidate
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: TZ-1.0.1-ios-arm64-REQUIRES-FULL-RESIGN-${{ github.sha }}
+          name: TZ-1.0.0-ios-arm64-REQUIRES-FULL-RESIGN-${{ github.sha }}
           path: ${{ runner.temp }}/tz-verified-output
           if-no-files-found: error
           retention-days: 14

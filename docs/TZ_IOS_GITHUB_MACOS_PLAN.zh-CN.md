@@ -26,10 +26,10 @@
 4. API ID/hash 只从 Actions secrets 读取，先 mask，不写仓库、不输出原值；临时 JSON 写到 runner temp 且权限为 0600。网关主机名和端口是项目配置，不是 secret；源码与日志禁止出现源站 IP。
 5. 运行时从上游公开的自签证书/profile 生成 TZ 专用伪 profiles，构建 `release_arm64`；Bundle 根暂定 `com.tianze.tz`，Team 仍是公开自签身份 `C67CF9S4VU`，不是 Apple 授权或长期签名身份。
 6. 构建失败时从完整 step log 提取第一条具体错误；不把后续 Bazel 汇总错误当根因。
-7. 只有 IPA/Payload、主 app 与全部扩展 Bundle ID、arm64、版本 1.0.1、TZ/天泽集团品牌、网关静态存在、受限 entitlement 缺失、伪签证书/profile 和 SHA256 全部通过后才保存工具 cache 并上传 artifact。
+7. 只有 IPA/Payload、主 app 与全部扩展 Bundle ID、arm64、版本 1.0.0、TZ/天泽集团品牌、网关静态存在、受限 entitlement 缺失、伪签证书/profile 和 SHA256 全部通过后才保存工具 cache 并上传 artifact。
 8. artifact 名和包内说明都标记 `REQUIRES-FULL-RESIGN`；明确不是 Release、不可直接安装，安装与运行未执行。
 
-当前 overlay 已将 app 版本设为 1.0.1，并完成上述源码门禁；是否实际编译成功仍只能由 GitHub Actions macOS run 证明。
+当前 overlay 已将 app 版本设为 1.0.0，并完成上述源码门禁；是否实际编译成功仍只能由 GitHub Actions macOS run 证明。
 
 ## Cache 可验证性与秘密边界
 
