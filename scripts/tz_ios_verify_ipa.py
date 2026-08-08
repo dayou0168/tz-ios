@@ -14,7 +14,7 @@ import zipfile
 from pathlib import Path
 
 
-EXPECTED_VERSION = "1.0.1"
+EXPECTED_VERSION = "1.0.0"
 EXPECTED_BRAND = "TZ"
 EXPECTED_BUNDLE_ID = "com.tianze.tz"
 EXPECTED_APP_GROUP = "group.com.tianze.tz"
@@ -268,7 +268,7 @@ def main() -> int:
             verify_bundle(bundle, bundle_id, payload, require_entitlements=False) for bundle in frameworks
         )
 
-    final_ipa = output / "TZ-1.0.1-ios-arm64-REQUIRES-FULL-RESIGN.ipa"
+    final_ipa = output / "TZ-1.0.0-ios-arm64-REQUIRES-FULL-RESIGN.ipa"
     shutil.copy2(ipa, final_ipa)
     ipa_sha256 = sha256_file(final_ipa)
     (output / "SHA256SUMS.txt").write_text(

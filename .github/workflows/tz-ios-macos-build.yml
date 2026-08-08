@@ -31,7 +31,7 @@ jobs:
       TZ_EXPECTED_XCODE: "26.2"
       TZ_EXPECTED_BAZEL: "8.4.2"
       TZ_EXPECTED_BAZEL_SHA256: 45e9388abf21d1107e146ea366ad080eb93cb6a5f3a4a3b048f78de0bc3faffa
-      TZ_EXPECTED_APP_VERSION: "1.0.1"
+      TZ_EXPECTED_APP_VERSION: "1.0.0"
       TZ_EXPECTED_BUNDLE_ID: com.tianze.tz
       BAZEL_BINARY: ${{ github.workspace }}/build-input/bazel-8.4.2-darwin-arm64
       TZ_IOS_API_ID: ${{ secrets.TZ_IOS_API_ID }}
@@ -222,7 +222,7 @@ jobs:
         id: upload_candidate
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: TZ-1.0.1-ios-arm64-REQUIRES-FULL-RESIGN-${{ github.sha }}
+          name: TZ-1.0.0-ios-arm64-REQUIRES-FULL-RESIGN-${{ github.sha }}
           path: ${{ runner.temp }}/tz-verified-output
           if-no-files-found: error
           retention-days: 14
