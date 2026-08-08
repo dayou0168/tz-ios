@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   build:
-    if: ${{ github.event.repository.private == true && inputs.acknowledge_not_installable == true }}
+    if: ${{ inputs.acknowledge_not_installable == true }}
     runs-on: macos-26
     timeout-minutes: 360
     env:
@@ -38,7 +38,7 @@ jobs:
       TZ_IOS_API_HASH: ${{ secrets.TZ_IOS_API_HASH }}
 
     steps:
-      - name: Check out the private TZ source snapshot
+      - name: Check out the TZ source snapshot
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
@@ -57,11 +57,10 @@ jobs:
             echo "TZ_FAKE_SIGNING=$RUNNER_TEMP/tz-fake-signing"
           } >> "$GITHUB_ENV"
 
-      - name: Enforce private repository and locked upstream ancestry
+      - name: Enforce locked upstream ancestry
         shell: bash
         run: |
           set -euo pipefail
-          test "${{ github.event.repository.private }}" = "true"
           test "$(git config --get remote.origin.url)" != "https://github.com/TelegramMessenger/Telegram-iOS.git"
           test "$(python3 -c 'import json; print(json.load(open("TZ_UPSTREAM.lock"))["commit"])')" = "$TZ_UPSTREAM_SHA"
           git cat-file -e "$TZ_UPSTREAM_SHA^{commit}"
