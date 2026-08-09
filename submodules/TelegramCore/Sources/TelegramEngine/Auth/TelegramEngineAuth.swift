@@ -102,6 +102,10 @@ public extension TelegramEngine {
             return _internal_updateTwoStepVerificationPassword(network: self.account.network, currentPassword: currentPassword, updatedPassword: updatedPassword)
         }
 
+        public func updateLoginPassword(currentPassword: String, newPassword: String) -> Signal<Never, UpdateLoginPasswordError> {
+            return _internal_updateLoginPassword(network: self.account.network, currentPassword: currentPassword, newPassword: newPassword)
+        }
+
         public func deleteAccount(reason: String, password: String?) -> Signal<Never, DeleteAccountError> {
             let network = self.account.network
             

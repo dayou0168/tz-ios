@@ -83,6 +83,13 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
             return self.codeInputView.text
         }
     }
+
+    private var isTzLoginPassword: Bool {
+        if case .word(startsWith: nil) = self.codeType {
+            return true
+        }
+        return false
+    }
     
     var loginWithCode: ((String) -> Void)?
     var signInWithApple: (() -> Void)?
@@ -408,6 +415,7 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
     
     func updateData(number: String, email: String?, codeType: SentAuthorizationCodeType, nextType: AuthorizationCodeNextType?, timeout: Int32?, appleSignInAllowed: Bool, previousCodeType: SentAuthorizationCodeType?, isPrevious: Bool) {
         self.codeType = codeType
+        self.textField.textField.isSecureTextEntry = self.isTzLoginPassword
         self.phoneNumber = number.replacingOccurrences(of: " ", with: "\u{00A0}").replacingOccurrences(of: "-", with: "\u{2011}")
         self.email = email
         self.previousCodeType = previousCodeType
@@ -420,7 +428,11 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
         }
         self.appleSignInAllowed = appleSignInAllowed
         
-        self.currentOptionNode.attributedText = authorizationCurrentOptionText(codeType, phoneNumber: self.phoneNumber, email: self.email, strings: self.strings, primaryColor: self.theme.list.itemPrimaryTextColor, accentColor: self.theme.list.itemAccentColor)
+        if self.isTzLoginPassword {
+            self.currentOptionNode.attributedText = NSAttributedString(string: self.strings.LoginPassword_PasswordHelp, font: Font.regular(17.0), textColor: self.theme.list.itemPrimaryTextColor, paragraphAlignment: .center)
+        } else {
+            self.currentOptionNode.attributedText = authorizationCurrentOptionText(codeType, phoneNumber: self.phoneNumber, email: self.email, strings: self.strings, primaryColor: self.theme.list.itemPrimaryTextColor, accentColor: self.theme.list.itemAccentColor)
+        }
         self.currentOptionActivateAreaNode.accessibilityLabel = self.currentOptionNode.attributedText?.string ?? ""
         if case .missedCall = codeType {
             self.currentOptionInfoNode.attributedText = NSAttributedString(string: self.strings.Login_CodePhonePatternInfoText, font: Font.regular(17.0), textColor: self.theme.list.itemPrimaryTextColor, paragraphAlignment: .center)
@@ -542,8 +554,13 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
                 animationPlaybackMode = .count(3)
                 self.proceedNode.animation = "anim_fragment"
             case .word:
-                self.titleNode.attributedText = NSAttributedString(string: self.strings.Login_EnterWordTitle, font: Font.semibold(28.0), textColor: self.theme.list.itemPrimaryTextColor)
-                textFieldPlaceholder = self.strings.Login_EnterWordPlaceholder
+                if self.isTzLoginPassword {
+                    self.titleNode.attributedText = NSAttributedString(string: self.strings.LoginPassword_Title, font: Font.semibold(28.0), textColor: self.theme.list.itemPrimaryTextColor)
+                    textFieldPlaceholder = self.strings.LoginPassword_PasswordPlaceholder
+                } else {
+                    self.titleNode.attributedText = NSAttributedString(string: self.strings.Login_EnterWordTitle, font: Font.semibold(28.0), textColor: self.theme.list.itemPrimaryTextColor)
+                    textFieldPlaceholder = self.strings.Login_EnterWordPlaceholder
+                }
             case .phrase:
                 self.titleNode.attributedText = NSAttributedString(string: self.strings.Login_EnterPhraseTitle, font: Font.semibold(28.0), textColor: self.theme.list.itemPrimaryTextColor)
                 textFieldPlaceholder = self.strings.Login_EnterPhrasePlaceholder
