@@ -1048,7 +1048,7 @@ public final class Network: NSObject, MTRequestMessageServiceDelegate {
     
     public func mergeBackupDatacenterAddress(datacenterId: Int32, host: String, port: Int32, secret: Data?) {
         self.context.performBatchUpdates {
-            let address = MTDatacenterAddress(ip: host, port: UInt16(port), preferForMedia: false, restrictToTcp: false, cdn: false, preferForProxy: false, secret: secret)
+            let address = MTDatacenterAddress(ip: host, port: UInt16(port), preferForMedia: false, restrictToTcp: true, cdn: false, preferForProxy: false, secret: secret)
             self.context.addAddressForDatacenter(withId: Int(datacenterId), address: address)
             
             /*let currentScheme = self.context.transportSchemeForDatacenter(withId: Int(datacenterId), media: false, isProxy: false)

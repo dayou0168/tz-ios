@@ -30,7 +30,7 @@ def main() -> int:
     identities = json.loads(read("TZ_IOS_IDENTITIES.json"))
     versions = json.loads(read("versions.json"))
     require(lock.get("commit") == EXPECTED_UPSTREAM, "upstream lock mismatch")
-    require(versions.get("app") == "1.0.0", "TZ app version must be 1.0.0")
+    require(versions.get("app") == "1.0.4", "TZ app version must be 1.0.4")
     require(versions.get("macos") == "26", "upstream macOS version changed")
     require(versions.get("xcode") == "26.2", "upstream Xcode version changed")
     require(str(versions.get("bazel", "")).startswith("8.4.2:"), "upstream Bazel version changed")
@@ -73,7 +73,7 @@ def main() -> int:
         require(required_text in localized, f"missing minimum user-visible brand text: {required_text}")
 
     print(
-        "TZ source verification passed: 1.0.0, com.tianze.tz namespace, "
+        "TZ source verification passed: 1.0.4, com.tianze.tz namespace, "
         "restricted Telegram entitlements inactive, branded UI/icon, hostname-only gateway"
     )
     return 0
