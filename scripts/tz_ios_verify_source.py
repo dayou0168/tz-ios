@@ -14,6 +14,7 @@ EXPECTED_BUNDLE_ID = "com.tianze.tz"
 EXPECTED_APP_GROUP = "group.com.tianze.tz"
 EXPECTED_GATEWAY = "tztg.tianze8.cc"
 EXPECTED_PORT = "2398"
+EXPECTED_RSA_FRAGMENT = "MIIBCgKCAQEA7lyx4eQO/cyY9icmLgUQ2nxZ++xP+q1AQEfCRSvilbS72Qvyj/dJ"
 
 
 def read(relative: str) -> str:
@@ -30,7 +31,7 @@ def main() -> int:
     identities = json.loads(read("TZ_IOS_IDENTITIES.json"))
     versions = json.loads(read("versions.json"))
     require(lock.get("commit") == EXPECTED_UPSTREAM, "upstream lock mismatch")
-    require(versions.get("app") == "1.0.4", "TZ app version must be 1.0.4")
+    require(versions.get("app") == "1.0.5", "TZ app version must be 1.0.5")
     require(versions.get("macos") == "26", "upstream macOS version changed")
     require(versions.get("xcode") == "26.2", "upstream Xcode version changed")
     require(str(versions.get("bazel", "")).startswith("8.4.2:"), "upstream Bazel version changed")
@@ -66,6 +67,14 @@ def main() -> int:
     require(re.search(r"(?<![0-9])(?:[0-9]{1,3}\.){3}[0-9]{1,3}(?![0-9])", network) is None,
             "numeric network address found in the TZ network source; origin IPs are forbidden")
 
+    auth_service = read("submodules/MtProtoKit/Sources/MTDatacenterAuthMessageService.m")
+    require(auth_service.count(EXPECTED_RSA_FRAGMENT) == 2,
+            "gramsrv RSA key must replace both testing and production MTProto keys")
+    require("MIIBCgKCAQEAyMEdY1aR+sCR3ZSJrtzt" not in auth_service,
+            "Telegram testing RSA key is still present")
+    require("MIIBCgKCAQEA6LszBcC1LGzyr992NzE0" not in auth_service,
+            "Telegram production RSA key is still present")
+
     icon = read("Telegram/Telegram-iOS/Telegram.icon/Assets/Plane.svg")
     require("<title>TZ</title>" in icon and 'id="TZ"' in icon, "default app icon is not the TZ monogram")
     localized = read("Telegram/Telegram-iOS/en.lproj/Localizable.strings")
@@ -73,8 +82,8 @@ def main() -> int:
         require(required_text in localized, f"missing minimum user-visible brand text: {required_text}")
 
     print(
-        "TZ source verification passed: 1.0.4, com.tianze.tz namespace, "
-        "restricted Telegram entitlements inactive, branded UI/icon, hostname-only gateway"
+        "TZ source verification passed: 1.0.5, com.tianze.tz namespace, "
+        "restricted Telegram entitlements inactive, branded UI/icon, hostname-only gateway, gramsrv RSA"
     )
     return 0
 
