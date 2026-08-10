@@ -15,7 +15,7 @@ on:
         type: boolean
   push:
     tags:
-      - "1.0.4"
+      - "1.0.5"
 
 permissions:
   contents: write
@@ -34,9 +34,9 @@ jobs:
       TZ_EXPECTED_XCODE: "26.2"
       TZ_EXPECTED_BAZEL: "8.4.2"
       TZ_EXPECTED_BAZEL_SHA256: 45e9388abf21d1107e146ea366ad080eb93cb6a5f3a4a3b048f78de0bc3faffa
-      TZ_EXPECTED_APP_VERSION: "1.0.4"
+      TZ_EXPECTED_APP_VERSION: "1.0.5"
       TZ_EXPECTED_BUNDLE_ID: com.tianze.tz
-      TZ_BUILD_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.build_number || '100004' }}
+      TZ_BUILD_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.build_number || '100005' }}
       BAZEL_BINARY: ${{ github.workspace }}/build-input/bazel-8.4.2-darwin-arm64
       TZ_IOS_API_ID: ${{ secrets.TZ_IOS_API_ID }}
       TZ_IOS_API_HASH: ${{ secrets.TZ_IOS_API_HASH }}
@@ -226,7 +226,7 @@ jobs:
         id: upload_candidate
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: TZ-1.0.4-ios-arm64-REQUIRES-FULL-RESIGN-${{ github.sha }}
+          name: TZ-1.0.5-ios-arm64-REQUIRES-FULL-RESIGN-${{ github.sha }}
           path: ${{ runner.temp }}/tz-verified-output
           if-no-files-found: error
           retention-days: 14
@@ -242,8 +242,8 @@ jobs:
           gh release create "${GITHUB_REF_NAME}" "$TZ_VERIFIED_OUTPUT"/* \
             --repo "$GITHUB_REPOSITORY" \
             --verify-tag \
-            --title "TZ iOS 1.0.4" \
-            --notes "TZ iOS 1.0.4：修复固定 TCP 连接与账号密码登录，新增登录密码修改入口，并兼容服务端共享媒体数量文本修复。此 Actions 产物为自签名候选包，必须完整重签名后才能安装。"
+            --title "TZ iOS 1.0.5" \
+            --notes "TZ iOS 1.0.5：将测试和生产 MTProto RSA 公钥替换为 gramsrv 配套公钥，并继续强制使用 tztg.tianze8.cc:2398 TCP 端点。此 Actions 产物为自签名候选包，必须完整重签名后才能安装。"
 
       - name: State the exact completion boundary
         shell: bash

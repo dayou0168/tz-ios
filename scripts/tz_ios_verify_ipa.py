@@ -14,12 +14,13 @@ import zipfile
 from pathlib import Path
 
 
-EXPECTED_VERSION = "1.0.4"
+EXPECTED_VERSION = "1.0.5"
 EXPECTED_BRAND = "TZ"
 EXPECTED_BUNDLE_ID = "com.tianze.tz"
 EXPECTED_APP_GROUP = "group.com.tianze.tz"
 EXPECTED_ENDPOINT_HOST = "tztg.tianze8.cc"
 EXPECTED_ENDPOINT_PORT = 2398
+EXPECTED_RSA_FRAGMENT = "MIIBCgKCAQEA7lyx4eQO/cyY9icmLgUQ2nxZ++xP+q1AQEfCRSvilbS72Qvyj/dJ"
 FAKE_TEAM_ID = "C67CF9S4VU"
 FAKE_SIGNING_AUTHORITY = "Authority=Apple Distribution: Telegram FZ-LLC (C67CF9S4VU)"
 FAKE_CERT_SHA256 = "eccdeb43dd50f4abdadf0dc6204c314298c16005567fcbf5d0a20a5761a93ba4"
@@ -190,14 +191,7 @@ def verify_fake_profile(bundle: Path, expected_bundle_id: str) -> None:
     )
 
 
-def verify_endpoint(root: Path, info: dict) -> None:
-    if info.get("TZGatewayHost") != EXPECTED_ENDPOINT_HOST:
-        raise SystemExit("main Info.plist TZGatewayHost mismatch")
-    if info.get("TZGatewayPort") != EXPECTED_ENDPOINT_PORT:
-        raise SystemExit("main Info.plist TZGatewayPort mismatch")
-    if info.get("TZSigningStatus") != "REQUIRES-FULL-RESIGN":
-        raise SystemExit("main Info.plist does not disclose the fake-signing boundary")
-    needle = EXPECTED_ENDPOINT_HOST.encode("utf-8")
+def contains_bytes(root: Path, needle: bytes) -> bool:
     for path in root.rglob("*"):
         if not path.is_file() or path.stat().st_size > 1024 * 1024 * 1024:
             continue
@@ -206,9 +200,22 @@ def verify_endpoint(root: Path, info: dict) -> None:
             for chunk in iter(lambda: stream.read(4 * 1024 * 1024), b""):
                 data = overlap + chunk
                 if needle in data:
-                    return
+                    return True
                 overlap = data[-max(0, len(needle) - 1) :]
-    raise SystemExit("expected private endpoint was not found in the unpacked IPA")
+    return False
+
+
+def verify_network_profile(root: Path, info: dict) -> None:
+    if info.get("TZGatewayHost") != EXPECTED_ENDPOINT_HOST:
+        raise SystemExit("main Info.plist TZGatewayHost mismatch")
+    if info.get("TZGatewayPort") != EXPECTED_ENDPOINT_PORT:
+        raise SystemExit("main Info.plist TZGatewayPort mismatch")
+    if info.get("TZSigningStatus") != "REQUIRES-FULL-RESIGN":
+        raise SystemExit("main Info.plist does not disclose the fake-signing boundary")
+    if not contains_bytes(root, EXPECTED_ENDPOINT_HOST.encode("utf-8")):
+        raise SystemExit("expected private endpoint was not found in the unpacked IPA")
+    if not contains_bytes(root, EXPECTED_RSA_FRAGMENT.encode("ascii")):
+        raise SystemExit("expected gramsrv RSA public key was not found in the unpacked IPA")
 
 
 def main() -> int:
@@ -241,7 +248,7 @@ def main() -> int:
         if bundle_id != EXPECTED_BUNDLE_ID:
             raise SystemExit(f"unexpected main Bundle ID: {bundle_id!r}")
 
-        verify_endpoint(extracted, info)
+        verify_network_profile(extracted, info)
 
         code_verify = run("codesign", "--verify", "--deep", "--strict", str(app))
         if code_verify.returncode != 0:
@@ -268,7 +275,7 @@ def main() -> int:
             verify_bundle(bundle, bundle_id, payload, require_entitlements=False) for bundle in frameworks
         )
 
-    final_ipa = output / "TZ-1.0.4-ios-arm64-REQUIRES-FULL-RESIGN.ipa"
+    final_ipa = output / "TZ-1.0.5-ios-arm64-REQUIRES-FULL-RESIGN.ipa"
     shutil.copy2(ipa, final_ipa)
     ipa_sha256 = sha256_file(final_ipa)
     (output / "SHA256SUMS.txt").write_text(
@@ -280,6 +287,7 @@ def main() -> int:
         "version": EXPECTED_VERSION,
         "brand": EXPECTED_BRAND,
         "endpoint_static_check": "hostname_and_port_confirmed",
+        "mtproto_rsa_static_check": "gramsrv_public_key_confirmed",
         "bundle_id": EXPECTED_BUNDLE_ID,
         "app_group": EXPECTED_APP_GROUP,
         "extensions": sorted(EXPECTED_EXTENSION_IDS),
