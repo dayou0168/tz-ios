@@ -174,7 +174,7 @@ private func synchronizeLocalizationUpdates(accountManager: AccountManager<Teleg
             return accountManager.transaction { transaction -> Signal<Void, SynchronizeLocalizationUpdatesError> in
                 let (primary, secondary) = getLocalization(transaction)
                 
-                var currentSettings = transaction.getSharedData(SharedDataKeys.localizationSettings)?.get(LocalizationSettings.self) ?? LocalizationSettings(primaryComponent: LocalizationComponent(languageCode: "en", localizedName: "English", localization: Localization(version: 0, entries: []), customPluralizationCode: nil), secondaryComponent: nil)
+                var currentSettings = transaction.getSharedData(SharedDataKeys.localizationSettings)?.get(LocalizationSettings.self) ?? LocalizationSettings(primaryComponent: LocalizationComponent(languageCode: "zh-hans", localizedName: "简体中文", localization: Localization(version: 0, entries: []), customPluralizationCode: "zh"), secondaryComponent: nil)
                 
                 for difference in parsedDifferences {
                     let current: (isPrimary: Bool, entries: [LocalizationEntry])
@@ -289,7 +289,7 @@ func tryApplyingLanguageDifference(transaction: AccountManagerModifier<TelegramA
             }
             mergedEntries.append(contentsOf: updatedEntries)
             
-            let currentSettings = transaction.getSharedData(SharedDataKeys.localizationSettings)?.get(LocalizationSettings.self) ?? LocalizationSettings(primaryComponent: LocalizationComponent(languageCode: "en", localizedName: "English", localization: Localization(version: 0, entries: []), customPluralizationCode: nil), secondaryComponent: nil)
+            let currentSettings = transaction.getSharedData(SharedDataKeys.localizationSettings)?.get(LocalizationSettings.self) ?? LocalizationSettings(primaryComponent: LocalizationComponent(languageCode: "zh-hans", localizedName: "简体中文", localization: Localization(version: 0, entries: []), customPluralizationCode: "zh"), secondaryComponent: nil)
             
             var updatedSettings: LocalizationSettings
             if isPrimary {

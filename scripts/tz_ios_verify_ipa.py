@@ -14,7 +14,7 @@ import zipfile
 from pathlib import Path
 
 
-EXPECTED_VERSION = "1.0.5"
+EXPECTED_VERSION = "1.0.9"
 EXPECTED_BRAND = "TZ"
 EXPECTED_BUNDLE_ID = "com.tianze.tz"
 EXPECTED_APP_GROUP = "group.com.tianze.tz"
@@ -34,7 +34,6 @@ EXPECTED_EXTENSION_IDS = {
 }
 RESTRICTED_ENTITLEMENTS = {
     "com.apple.developer.applesignin",
-    "com.apple.developer.associated-domains",
     "com.apple.developer.background-tasks.continued-processing.gpu",
     "com.apple.developer.carplay-messaging",
     "com.apple.developer.icloud-container-identifiers",
@@ -112,6 +111,11 @@ def verify_entitlements(
         raise SystemExit("main app fake APS entitlement must be development")
     if not is_main and aps_environment is not None:
         raise SystemExit(f"unexpected APS entitlement on extension {bundle_id}")
+    associated_domains = entitlements.get("com.apple.developer.associated-domains")
+    if is_main and associated_domains != ["applinks:tg.tianze8.cc"]:
+        raise SystemExit("main app associated domain must be applinks:tg.tianze8.cc")
+    if not is_main and associated_domains is not None:
+        raise SystemExit(f"unexpected associated domain on extension {bundle_id}")
 
 
 def verify_bundle(bundle: Path, main_bundle_id: str, report_root: Path, *, require_entitlements: bool) -> dict:
@@ -275,7 +279,7 @@ def main() -> int:
             verify_bundle(bundle, bundle_id, payload, require_entitlements=False) for bundle in frameworks
         )
 
-    final_ipa = output / "TZ-1.0.5-ios-arm64-REQUIRES-FULL-RESIGN.ipa"
+    final_ipa = output / "TZ-1.0.9-ios-arm64-REQUIRES-FULL-RESIGN.ipa"
     shutil.copy2(ipa, final_ipa)
     ipa_sha256 = sha256_file(final_ipa)
     (output / "SHA256SUMS.txt").write_text(

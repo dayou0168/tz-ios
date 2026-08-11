@@ -483,7 +483,7 @@ func initializedNetwork(accountId: AccountRecordId, arguments: NetworkInitializa
             apiEnvironment.langPack = arguments.languagesCategory
             apiEnvironment.layer = NSNumber(value: Int(serialization.currentLayer()))
             apiEnvironment.disableUpdates = supplementary
-            apiEnvironment = apiEnvironment.withUpdatedLangPackCode(languageCode ?? "en")
+            apiEnvironment = apiEnvironment.withUpdatedLangPackCode(languageCode ?? "zh-hans")
             
             if let effectiveActiveServer = proxySettings?.effectiveActiveServer {
                 apiEnvironment = apiEnvironment.withUpdatedSocksProxySettings(effectiveActiveServer.mtProxySettings)

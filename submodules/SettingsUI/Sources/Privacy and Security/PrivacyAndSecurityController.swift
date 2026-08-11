@@ -708,7 +708,7 @@ private func privacyAndSecurityControllerEntries(
         twoStepAuthString = hasTwoStepAuth ? presentationData.strings.PrivacySettings_PasscodeOn : presentationData.strings.PrivacySettings_PasscodeOff
     }
     entries.append(.twoStepVerification(presentationData.theme, presentationData.strings.PrivacySettings_TwoStepAuth, twoStepAuthString, twoStepAuthData))
-    entries.append(.loginPassword(presentationData.theme, presentationData.strings.TwoStepAuth_ChangePassword))
+    entries.append(.loginPassword(presentationData.theme, presentationData.strings.TZ_LoginPassword_Title))
     
     if displayPasskeys {
         var passkeysString = ""

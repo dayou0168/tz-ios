@@ -270,6 +270,7 @@ filegroup(
     name = "AppStringResources",
     srcs = [
         "Telegram-iOS/en.lproj/Localizable.strings",
+        "Telegram-iOS/zh-Hans.lproj/Localizable.strings",
     ] + [
         "{}.lproj/Localizable.strings".format(language) for language in empty_languages
     ],
@@ -492,7 +493,12 @@ icloud_fragment = "" if not telegram_enable_icloud else """
     telegram_icloud_environment="Production" if telegram_aps_environment == "production" else "Development"
 )
 
-associated_domains_fragment = "" if telegram_bundle_id not in official_bundle_ids else """
+associated_domains_fragment = """
+<key>com.apple.developer.associated-domains</key>
+<array>
+    <string>applinks:tg.tianze8.cc</string>
+</array>
+""" if telegram_bundle_id == "com.tianze.tz" else ("" if telegram_bundle_id not in official_bundle_ids else """
 <key>com.apple.developer.associated-domains</key>
 <array>
     <string>applinks:telegram.me</string>
@@ -501,7 +507,7 @@ associated_domains_fragment = "" if telegram_bundle_id not in official_bundle_id
     <string>webcredentials:t.me</string>
     <string>webcredentials:telegram.org</string>
 </array>
-"""
+""")
 
 siri_fragment = "" if not telegram_enable_siri else """
 <key>com.apple.developer.siri</key>

@@ -1,9 +1,9 @@
 /* Localized versions of Info.plist keys */
 
-"NSContactsUsageDescription" = "TZ (天泽集团) securely synchronizes your contacts so you can connect across your devices.";
-"NSLocationWhenInUseUsageDescription" = "TZ (天泽集团) needs location access to share your location and show it on a map.";
-"NSLocationAlwaysAndWhenInUseUsageDescription" = "TZ (天泽集团) needs background location access while you share Live Location.";
-"NSLocationAlwaysUsageDescription" = "TZ (天泽集团) needs background location access while you share Live Location.";
+"NSContactsUsageDescription" = "TZ securely synchronizes your contacts so you can connect across your devices.";
+"NSLocationWhenInUseUsageDescription" = "TZ needs location access to share your location and show it on a map.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "TZ needs background location access while you share Live Location.";
+"NSLocationAlwaysUsageDescription" = "TZ needs background location access while you share Live Location.";
 "NSCameraUsageDescription" = "We need this so that you can take and share photos and videos, as well as make video calls.";
 "NSPhotoLibraryUsageDescription" = "We need this so that you can share photos and videos from your photo library and save the ones you capture.";
 "NSPhotoLibraryAddUsageDescription" = "We need this so that you can save photos and videos to your photo library and save the ones you capture.";

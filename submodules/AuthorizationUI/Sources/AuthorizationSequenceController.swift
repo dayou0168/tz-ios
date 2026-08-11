@@ -592,6 +592,8 @@ public final class AuthorizationSequenceController: NavigationController, ASAuth
                                         switch type {
                                         case .word, .phrase:
                                             text = strongSelf.presentationData.strings.Login_WrongPhraseError
+                                        case .loginPassword:
+                                            text = strongSelf.presentationData.strings.TZ_LoginPassword_InvalidCurrent
                                             controller.selectIncorrectPart()
                                         default:
                                             text = strongSelf.presentationData.strings.Login_WrongCodeError
