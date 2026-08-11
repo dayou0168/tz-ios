@@ -317,11 +317,11 @@ public func sendAuthorizationCode(accountManager: AccountManager<TelegramAccount
                                                     previousCodeEntry = previousCodeEntryValue
                                                 } else {
                                                     switch type {
-                                                    case .word, .phrase:
+                                                    case .word, .phrase, .loginPassword:
                                                         previousCodeEntry = state.contents
                                                     default:
                                                         switch parsedType {
-                                                        case .word, .phrase:
+                                                        case .word, .phrase, .loginPassword:
                                                             previousCodeEntry = state.contents
                                                         default:
                                                             break
@@ -347,11 +347,11 @@ public func sendAuthorizationCode(accountManager: AccountManager<TelegramAccount
                                 previousCodeEntry = previousCodeEntryValue
                             } else {
                                 switch type {
-                                case .word, .phrase:
+                                case .word, .phrase, .loginPassword:
                                     previousCodeEntry = state.contents
                                 default:
                                     switch parsedType {
-                                    case .word, .phrase:
+                                    case .word, .phrase, .loginPassword:
                                         previousCodeEntry = state.contents
                                     default:
                                         break
@@ -481,11 +481,11 @@ private func internalResendAuthorizationCode(accountManager: AccountManager<Tele
                                             previousCodeEntry = previousCodeEntryValue
                                         } else {
                                             switch type {
-                                            case .word, .phrase:
+                                            case .word, .phrase, .loginPassword:
                                                 previousCodeEntry = state.contents
                                             default:
                                                 switch parsedType {
-                                                case .word, .phrase:
+                                                case .word, .phrase, .loginPassword:
                                                     previousCodeEntry = state.contents
                                                 default:
                                                     break
@@ -511,11 +511,11 @@ private func internalResendAuthorizationCode(accountManager: AccountManager<Tele
                         previousCodeEntry = previousCodeEntryValue
                     } else {
                         switch type {
-                        case .word, .phrase:
+                        case .word, .phrase, .loginPassword:
                             previousCodeEntry = state.contents
                         default:
                             switch parsedType {
-                            case .word, .phrase:
+                            case .word, .phrase, .loginPassword:
                                 previousCodeEntry = state.contents
                             default:
                                 break
@@ -572,11 +572,11 @@ public func resendAuthorizationCode(accountManager: AccountManager<TelegramAccou
                                         previousCodeEntry = previousCodeEntryValue
                                     } else {
                                         switch type {
-                                        case .word, .phrase:
+                                        case .word, .phrase, .loginPassword:
                                             previousCodeEntry = state.contents
                                         default:
                                             switch parsedType {
-                                            case .word, .phrase:
+                                            case .word, .phrase, .loginPassword:
                                                 previousCodeEntry = state.contents
                                             default:
                                                 break

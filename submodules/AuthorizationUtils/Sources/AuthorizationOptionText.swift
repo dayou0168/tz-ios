@@ -53,6 +53,8 @@ public func authorizationCurrentOptionText(_ type: SentAuthorizationCodeType, ph
         } else {
             return parseMarkdownIntoAttributedString(strings.Login_EnterPhraseText(phoneNumber).string, attributes: attributes, textAlignment: .center)
         }
+    case .loginPassword:
+        return NSAttributedString(string: strings.TZ_LoginPassword_Help, font: Font.regular(fontSize), textColor: primaryColor, paragraphAlignment: .center)
     }
 }
 

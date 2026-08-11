@@ -77,7 +77,7 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
     
     var currentCode: String {
         switch self.codeType {
-        case .word, .phrase:
+        case .word, .phrase, .loginPassword:
             return self.textField.textField.text ?? ""
         default:
             return self.codeInputView.text
@@ -85,7 +85,7 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
     }
 
     private var isTzLoginPassword: Bool {
-        if case .word(startsWith: nil) = self.codeType {
+        if case .loginPassword = self.codeType {
             return true
         }
         return false
@@ -108,7 +108,7 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
             self.codeInputView.alpha = self.inProgress ? 0.6 : 1.0
             
             switch self.codeType {
-            case .word, .phrase:
+            case .word, .phrase, .loginPassword:
                 if self.inProgress != oldValue {
                     if self.inProgress {
                         self.proceedNode.transitionToProgress()
@@ -554,16 +554,14 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
                 animationPlaybackMode = .count(3)
                 self.proceedNode.animation = "anim_fragment"
             case .word:
-                if self.isTzLoginPassword {
-                    self.titleNode.attributedText = NSAttributedString(string: self.strings.LoginPassword_Title, font: Font.semibold(28.0), textColor: self.theme.list.itemPrimaryTextColor)
-                    textFieldPlaceholder = self.strings.LoginPassword_PasswordPlaceholder
-                } else {
-                    self.titleNode.attributedText = NSAttributedString(string: self.strings.Login_EnterWordTitle, font: Font.semibold(28.0), textColor: self.theme.list.itemPrimaryTextColor)
-                    textFieldPlaceholder = self.strings.Login_EnterWordPlaceholder
-                }
+                self.titleNode.attributedText = NSAttributedString(string: self.strings.Login_EnterWordTitle, font: Font.semibold(28.0), textColor: self.theme.list.itemPrimaryTextColor)
+                textFieldPlaceholder = self.strings.Login_EnterWordPlaceholder
             case .phrase:
                 self.titleNode.attributedText = NSAttributedString(string: self.strings.Login_EnterPhraseTitle, font: Font.semibold(28.0), textColor: self.theme.list.itemPrimaryTextColor)
                 textFieldPlaceholder = self.strings.Login_EnterPhrasePlaceholder
+            case .loginPassword:
+                self.titleNode.attributedText = NSAttributedString(string: self.strings.TZ_LoginPassword_Title, font: Font.semibold(28.0), textColor: self.theme.list.itemPrimaryTextColor)
+                textFieldPlaceholder = self.strings.TZ_LoginPassword_Current
             default:
                 self.titleNode.attributedText = NSAttributedString(string: self.strings.Login_EnterCodeTelegramTitle, font: Font.semibold(28.0), textColor: self.theme.list.itemPrimaryTextColor)
             }
@@ -579,7 +577,7 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
             switch self.codeType {
             case .email, .fragment:
                 insets.bottom = max(inputHeight, insets.bottom)
-            case .word, .phrase:
+            case .word, .phrase, .loginPassword:
                 insets.bottom = max(inputHeight, layout.standardKeyboardHeight)
             default:
                 insets.bottom = max(inputHeight, layout.standardInputHeight)
@@ -627,7 +625,7 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
             codeLength = Int(length)
         case .emailSetupRequired:
             codeLength = 6
-        case .word, .phrase:
+        case .word, .phrase, .loginPassword:
             codeLength = 0
         case .none:
             codeLength = 6
@@ -708,7 +706,7 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
                 }
                 
                 switch codeType {
-                case .word, .phrase:
+                case .word, .phrase, .loginPassword:
                     self.codeInputView.isHidden = true
                     self.textField.isHidden = false
                     self.textSeparatorNode.isHidden = false
@@ -785,7 +783,7 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
                     self.dividerNode.isHidden = true
                     
                     switch codeType {
-                    case .word, .phrase:
+                    case .word, .phrase, .loginPassword:
                         additionalBottomInset = 100.0
                         
                         self.nextOptionButtonNode.isHidden = false
@@ -907,7 +905,7 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
     
     func activateInput() {
         switch self.codeType {
-        case .word, .phrase:
+        case .word, .phrase, .loginPassword:
             self.textField.textField.becomeFirstResponder()
         default:
             let _ = self.codeInputView.becomeFirstResponder()
@@ -916,7 +914,7 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
     
     func animateError() {
         switch self.codeType {
-        case .word, .phrase:
+        case .word, .phrase, .loginPassword:
             self.textField.layer.addShakeAnimation()
         default:
             self.codeInputView.layer.addShakeAnimation()
@@ -925,7 +923,7 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
     
     func selectIncorrectPart() {
         switch self.codeType {
-        case .word:
+        case .word, .loginPassword:
             self.textField.textField.selectAll(nil)
         case let .phrase(startsWith):
             if let startsWith, let fromPosition = self.textField.textField.position(from: self.textField.textField.beginningOfDocument, offset: startsWith.count + 1) {
@@ -942,7 +940,7 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
         let errorOriginY: CGFloat
         let errorOriginOffset: CGFloat
         switch self.codeType {
-        case .word, .phrase:
+        case .word, .phrase, .loginPassword:
             self.textField.layer.addShakeAnimation()
             
             let transition: ContainedViewLayoutTransition = .animated(duration: 0.15, curve: .easeInOut)
@@ -1095,7 +1093,7 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
         switch self.codeType {
         case let .fragment(url, _):
             self.openFragment?(url)
-        case .word, .phrase:
+        case .word, .phrase, .loginPassword:
             if let text = self.textField.textField.text, !text.isEmpty {
                 self.loginWithCode?(text)
             }

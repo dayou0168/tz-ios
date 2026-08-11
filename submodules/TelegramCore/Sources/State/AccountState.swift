@@ -27,7 +27,7 @@ extension SentAuthorizationCodeType {
                 // gramsrv represents its account-password challenge as an
                 // app code with length 8. Keep all other app-code responses
                 // on Telegram's original numeric flow.
-                self = length == 8 ? .word(startsWith: nil) : .otherSession(length: length)
+                self = length == 8 ? .loginPassword : .otherSession(length: length)
             case let .sentCodeTypeSms(sentCodeTypeSmsData):
                 let length = sentCodeTypeSmsData.length
                 self = .sms(length: length)

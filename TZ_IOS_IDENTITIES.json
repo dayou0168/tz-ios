@@ -26,6 +26,7 @@
     "main": [
       "application-identifier",
       "aps-environment=development",
+      "com.apple.developer.associated-domains=applinks:tg.tianze8.cc",
       "com.apple.developer.team-identifier",
       "com.apple.security.application-groups",
       "keychain-access-groups"
@@ -39,7 +40,6 @@
   },
   "restricted_entitlements_removed": [
     "com.apple.developer.applesignin",
-    "com.apple.developer.associated-domains",
     "com.apple.developer.background-tasks.continued-processing.gpu",
     "com.apple.developer.carplay-messaging",
     "com.apple.developer.icloud-container-identifiers",

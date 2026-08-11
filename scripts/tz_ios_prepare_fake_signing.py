@@ -39,7 +39,6 @@ PROFILE_SUFFIXES = {
 RESTRICTED_ENTITLEMENTS = {
     "beta-reports-active",
     "com.apple.developer.applesignin",
-    "com.apple.developer.associated-domains",
     "com.apple.developer.background-tasks.continued-processing.gpu",
     "com.apple.developer.carplay-messaging",
     "com.apple.developer.icloud-container-development-container-identifiers",
@@ -79,6 +78,7 @@ def sanitized_entitlements(suffix: str) -> dict:
     }
     if suffix == "":
         entitlements["aps-environment"] = "development"
+        entitlements["com.apple.developer.associated-domains"] = ["applinks:tg.tianze8.cc"]
     return entitlements
 
 

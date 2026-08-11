@@ -10,7 +10,7 @@ import AccountContext
 
 private let baseTelegramMePaths = [
     "telegram.me",
-    "t.me", "telegram.dog"
+    "t.me", "telegram.dog", "tg.tianze8.cc"
 ]
 private let telegramWebShortLinkHosts = [
     "a.t.me", 

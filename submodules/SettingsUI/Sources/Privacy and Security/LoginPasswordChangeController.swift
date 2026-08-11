@@ -83,11 +83,11 @@ private enum LoginPasswordChangeEntry: ItemListNodeEntry {
 
 private func loginPasswordEntries(presentationData: PresentationData, state: LoginPasswordChangeState) -> [LoginPasswordChangeEntry] {
     return [
-        .header(presentationData.theme, presentationData.strings.LoginPassword_Title),
-        .current(presentationData.theme, presentationData.strings.TwoStepAuth_EnterPasswordPassword, state.current),
-        .new(presentationData.theme, presentationData.strings.FastTwoStepSetup_PasswordPlaceholder, state.new),
-        .confirmation(presentationData.theme, presentationData.strings.FastTwoStepSetup_PasswordConfirmationPlaceholder, state.confirmation),
-        .info(presentationData.theme, presentationData.strings.LoginPassword_PasswordHelp)
+        .header(presentationData.theme, presentationData.strings.TZ_LoginPassword_Title),
+        .current(presentationData.theme, presentationData.strings.TZ_LoginPassword_Current, state.current),
+        .new(presentationData.theme, presentationData.strings.TZ_LoginPassword_New, state.new),
+        .confirmation(presentationData.theme, presentationData.strings.TZ_LoginPassword_Confirm, state.confirmation),
+        .info(presentationData.theme, presentationData.strings.TZ_LoginPassword_Help)
     ]
 }
 
@@ -120,7 +120,7 @@ public func loginPasswordChangeController(context: AccountContext) -> ViewContro
         let state = stateValue.with { $0 }
         let presentationData = context.sharedContext.currentPresentationData.with { $0 }
         guard !state.current.isEmpty, state.new.count >= 8 else {
-            presentImpl?(textAlertController(context: context, title: nil, text: "Enter your current password and a new password of at least 8 characters.", actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})]))
+            presentImpl?(textAlertController(context: context, title: nil, text: presentationData.strings.TZ_LoginPassword_Minimum, actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})]))
             return
         }
         guard state.new == state.confirmation else {
@@ -133,8 +133,8 @@ public func loginPasswordChangeController(context: AccountContext) -> ViewContro
             updateState { state in var state = state; state.saving = false; return state }
             let text: String
             switch error {
-            case .invalidCurrentPassword: text = presentationData.strings.LoginPassword_InvalidPasswordError
-            case .invalidNewPassword: text = "The new password must contain at least 8 characters."
+            case .invalidCurrentPassword: text = presentationData.strings.TZ_LoginPassword_InvalidCurrent
+            case .invalidNewPassword: text = presentationData.strings.TZ_LoginPassword_Minimum
             case .generic: text = presentationData.strings.Login_UnknownError
             }
             presentImpl?(textAlertController(context: context, title: nil, text: text, actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})]))
@@ -147,7 +147,7 @@ public func loginPasswordChangeController(context: AccountContext) -> ViewContro
     |> deliverOnMainQueue
     |> map { presentationData, state -> (ItemListControllerState, (ItemListNodeState, Any)) in
         let right = ItemListNavigationButton(content: state.saving ? .none : .icon(.done), style: state.saving ? .activity : .bold, enabled: !state.saving && !state.current.isEmpty && !state.new.isEmpty && !state.confirmation.isEmpty, action: { saveImpl?() })
-        let controllerState = ItemListControllerState(presentationData: ItemListPresentationData(presentationData), title: .text(presentationData.strings.TwoStepAuth_ChangePassword), leftNavigationButton: nil, rightNavigationButton: right, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
+        let controllerState = ItemListControllerState(presentationData: ItemListPresentationData(presentationData), title: .text(presentationData.strings.TZ_LoginPassword_Title), leftNavigationButton: nil, rightNavigationButton: right, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
         let listState = ItemListNodeState(presentationData: ItemListPresentationData(presentationData), entries: loginPasswordEntries(presentationData: presentationData, state: state), style: .blocks, focusItemTag: LoginPasswordEntryTag.current, animateChanges: false)
         return (controllerState, (listState, arguments))
     }

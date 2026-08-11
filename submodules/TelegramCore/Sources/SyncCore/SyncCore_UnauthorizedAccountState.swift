@@ -12,6 +12,7 @@ private enum SentAuthorizationCodeTypeValue: Int32 {
     case firebase = 8
     case word = 9
     case phrase = 10
+    case loginPassword = 11
 }
 
 public enum SentAuthorizationCodeType: PostboxCoding, Equatable {
@@ -26,6 +27,7 @@ public enum SentAuthorizationCodeType: PostboxCoding, Equatable {
     case firebase(pushTimeout: Int32?, length: Int32)
     case word(startsWith: String?)
     case phrase(startsWith: String?)
+    case loginPassword
     
     public init(decoder: PostboxDecoder) {
         switch decoder.decodeInt32ForKey("v", orElse: 0) {
@@ -51,6 +53,8 @@ public enum SentAuthorizationCodeType: PostboxCoding, Equatable {
                 self = .word(startsWith: decoder.decodeOptionalStringForKey("w"))
             case SentAuthorizationCodeTypeValue.phrase.rawValue:
                 self = .phrase(startsWith: decoder.decodeOptionalStringForKey("ph"))
+            case SentAuthorizationCodeTypeValue.loginPassword.rawValue:
+                self = .loginPassword
             default:
                 preconditionFailure()
         }
@@ -119,6 +123,8 @@ public enum SentAuthorizationCodeType: PostboxCoding, Equatable {
             } else {
                 encoder.encodeNil(forKey: "ph")
             }
+        case .loginPassword:
+            encoder.encodeInt32(SentAuthorizationCodeTypeValue.loginPassword.rawValue, forKey: "v")
         }
     }
 }
