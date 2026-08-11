@@ -1,0 +1,115 @@
+name: Replace TZ iOS 1.0.9 with unsigned IPA
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tz-ios-1.0.9-release-replacement
+  cancel-in-progress: false
+
+jobs:
+  replace:
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      RELEASE_TAG: 1.0.9
+      SIGNED_ASSET: TZ-1.0.9-ios-arm64-REQUIRES-FULL-RESIGN.ipa
+      SIGNED_ASSET_SHA256: 855c6b13f26101a6a2f16d9866933e6fda3b2a7a9ab86ee536b175e68936c91c
+      UNSIGNED_ASSET: TZ-1.0.9-ios-arm64-UNSIGNED.ipa
+
+    steps:
+      - name: Check out the release maintenance source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Download and authenticate the existing 1.0.9 candidate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/tz-input" "$RUNNER_TEMP/tz-output"
+          gh release download "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "$SIGNED_ASSET" \
+            --dir "$RUNNER_TEMP/tz-input"
+          printf '%s  %s\n' \
+            "$SIGNED_ASSET_SHA256" \
+            "$RUNNER_TEMP/tz-input/$SIGNED_ASSET" \
+            | shasum -a 256 -c -
+
+      - name: Strip all signatures and provisioning profiles
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/tz_ios_make_unsigned_ipa.py \
+            "$RUNNER_TEMP/tz-input/$SIGNED_ASSET" \
+            "$RUNNER_TEMP/tz-output/$UNSIGNED_ASSET" \
+            "$RUNNER_TEMP/tz-output/UNSIGNED_IPA_VERIFICATION.json"
+          unsigned_sha="$(shasum -a 256 "$RUNNER_TEMP/tz-output/$UNSIGNED_ASSET" | awk '{print $1}')"
+          printf '%s  %s\n' "$unsigned_sha" "$UNSIGNED_ASSET" \
+            > "$RUNNER_TEMP/tz-output/SHA256SUMS-UNSIGNED.txt"
+          cat > "$RUNNER_TEMP/tz-output/UNSIGNED-REQUIRES-APPLE-SIGNING.txt" <<'EOF'
+          UNSIGNED IPA - NOT DIRECTLY INSTALLABLE
+
+          This package contains no Apple code signatures or embedded provisioning profiles.
+          Completely re-sign the main app and every extension with matching Apple certificates,
+          identifiers, entitlements, and provisioning profiles before installation.
+          EOF
+
+      - name: Upload the unsigned assets before removing the old candidate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/tz-output"/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --json assets --jq '.assets[].name' \
+            | grep -Fx "$UNSIGNED_ASSET"
+
+      - name: Remove superseded fake-signed assets and update release notes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for asset in \
+            "$SIGNED_ASSET" \
+            IPA_STATIC_VERIFICATION.json \
+            REQUIRES_FULL_RESIGN.txt \
+            SHA256SUMS.txt; do
+            gh release delete-asset "$RELEASE_TAG" "$asset" \
+              --repo "$GITHUB_REPOSITORY" \
+              --yes
+          done
+          cat > "$RUNNER_TEMP/release-notes.md" <<'EOF'
+          TZ iOS 1.0.9：默认简体中文；完善 TZ 品牌显示；公开链接 tg.tianze8.cc 可由客户端识别；登录密码使用独立认证类型；继续固定 gramsrv TCP 端点及配套 RSA。
+
+          本 Release 提供无签名 IPA。包内不含 Apple 代码签名或 provisioning profile，不能直接安装；下载后必须使用有效 Apple 证书和匹配的描述文件，对主 App 及所有扩展进行完整签名。
+          EOF
+          gh release edit "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "TZ iOS 1.0.9" \
+            --notes-file "$RUNNER_TEMP/release-notes.md"
+
+      - name: Verify final Release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          assets="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')"
+          printf '%s\n' "$assets"
+          grep -Fx "$UNSIGNED_ASSET" <<< "$assets"
+          grep -Fx 'UNSIGNED_IPA_VERIFICATION.json' <<< "$assets"
+          grep -Fx 'SHA256SUMS-UNSIGNED.txt' <<< "$assets"
+          grep -Fx 'UNSIGNED-REQUIRES-APPLE-SIGNING.txt' <<< "$assets"
+          if grep -Fx "$SIGNED_ASSET" <<< "$assets"; then
+            echo "superseded fake-signed IPA is still present" >&2
+            exit 1
+          fi
