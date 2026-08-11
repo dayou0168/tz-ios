@@ -1,4 +1,4 @@
-name: TZ iOS arm64 candidate (requires full resign)
+name: TZ iOS arm64 unsigned candidate
 
 on:
   workflow_dispatch:
@@ -6,16 +6,16 @@ on:
       build_number:
         description: Numeric internal build number
         required: true
-        default: "100009"
+        default: "100010"
         type: string
       acknowledge_not_installable:
-        description: I understand the output is fake-signed and not directly installable
+        description: I understand the output is unsigned and requires complete Apple signing
         required: true
         default: false
         type: boolean
   push:
     tags:
-      - "1.0.9"
+      - "1.0.10"
 
 permissions:
   contents: write
@@ -34,9 +34,9 @@ jobs:
       TZ_EXPECTED_XCODE: "26.2"
       TZ_EXPECTED_BAZEL: "8.4.2"
       TZ_EXPECTED_BAZEL_SHA256: 45e9388abf21d1107e146ea366ad080eb93cb6a5f3a4a3b048f78de0bc3faffa
-      TZ_EXPECTED_APP_VERSION: "1.0.9"
+      TZ_EXPECTED_APP_VERSION: "1.0.10"
       TZ_EXPECTED_BUNDLE_ID: com.tianze.tz
-      TZ_BUILD_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.build_number || '100009' }}
+      TZ_BUILD_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.build_number || '100010' }}
       BAZEL_BINARY: ${{ github.workspace }}/build-input/bazel-8.4.2-darwin-arm64
       TZ_IOS_API_ID: ${{ secrets.TZ_IOS_API_ID }}
       TZ_IOS_API_HASH: ${{ secrets.TZ_IOS_API_HASH }}
@@ -57,6 +57,7 @@ jobs:
             echo "BAZEL_TOOL_CACHE=$RUNNER_TEMP/tz-bazel-tool-cache"
             echo "TZ_BUILD_OUTPUT=$RUNNER_TEMP/tz-build-output"
             echo "TZ_VERIFIED_OUTPUT=$RUNNER_TEMP/tz-verified-output"
+            echo "TZ_RELEASE_OUTPUT=$RUNNER_TEMP/tz-release-output"
             echo "TZ_BUILD_CONFIG=$RUNNER_TEMP/tz-ios-build-configuration.json"
             echo "TZ_FAKE_SIGNING=$RUNNER_TEMP/tz-fake-signing"
           } >> "$GITHUB_ENV"
@@ -180,6 +181,8 @@ jobs:
             --configurationPath="$TZ_BUILD_CONFIG" \
             --codesigningInformationPath="$TZ_FAKE_SIGNING" \
             --configuration=release_arm64 \
+            --disableExtensions \
+            --disablePushNotifications \
             --buildNumber="$TZ_BUILD_NUMBER" \
             --outputBuildArtifactsPath="$TZ_BUILD_OUTPUT" \
             --lock \
@@ -215,6 +218,43 @@ jobs:
             > "$TZ_VERIFIED_OUTPUT/REQUIRES_FULL_RESIGN.txt"
           (cd "$TZ_VERIFIED_OUTPUT" && shasum -a 256 -c SHA256SUMS.txt)
 
+      - name: Produce the unsigned signing-platform package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$TZ_RELEASE_OUTPUT"
+          python3 scripts/tz_ios_make_unsigned_ipa.py \
+            "$TZ_VERIFIED_OUTPUT/TZ-1.0.10-ios-arm64-REQUIRES-FULL-RESIGN.ipa" \
+            "$TZ_RELEASE_OUTPUT/TZ-1.0.10-ios-arm64-UNSIGNED.ipa" \
+            "$TZ_RELEASE_OUTPUT/UNSIGNED_IPA_VERIFICATION.json" \
+            --preserve-provisioning-profiles
+          python3 - "$TZ_RELEASE_OUTPUT/UNSIGNED_IPA_VERIFICATION.json" <<'PY'
+          import json
+          import sys
+          with open(sys.argv[1], encoding="utf-8") as stream:
+              report = json.load(stream)
+          if report.get("provisioning_profiles_preserved") != 1:
+              raise SystemExit("the single-target IPA must retain exactly one profile template")
+          if report.get("signature_status") != "UNSIGNED_REQUIRES_COMPLETE_APPLE_RESIGN_NOT_DIRECTLY_INSTALLABLE":
+              raise SystemExit("unexpected unsigned package status")
+          PY
+          for metadata in \
+            IPA_STATIC_VERIFICATION.json TZ_UPSTREAM.lock TZ_IOS_IDENTITIES.json \
+            SUBMODULES.txt CACHE_STATE.txt CACHE_INPUTS_SHA256.txt TZ_SOURCE_COMMIT.txt; do
+            cp "$TZ_VERIFIED_OUTPUT/$metadata" "$TZ_RELEASE_OUTPUT/$metadata"
+          done
+          unsigned_sha="$(shasum -a 256 "$TZ_RELEASE_OUTPUT/TZ-1.0.10-ios-arm64-UNSIGNED.ipa" | awk '{print $1}')"
+          printf '%s  %s\n' "$unsigned_sha" 'TZ-1.0.10-ios-arm64-UNSIGNED.ipa' \
+            > "$TZ_RELEASE_OUTPUT/SHA256SUMS-UNSIGNED.txt"
+          cat > "$TZ_RELEASE_OUTPUT/UNSIGNED-REQUIRES-APPLE-SIGNING.txt" <<'EOF'
+          UNSIGNED IPA - NOT DIRECTLY INSTALLABLE
+
+          This is a single-target IPA. It contains no Share, Widget, notification, Siri, broadcast,
+          or Watch extensions and requests no App Group, APNs, or Associated Domains entitlement.
+          The signing service must replace the one temporary profile template and completely sign
+          the main app, every framework, and every nested executable.
+          EOF
+
       - name: Save the Bazel executable cache only after the IPA passes all gates
         if: ${{ success() && steps.cache_restore.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830
@@ -222,12 +262,12 @@ jobs:
           path: ${{ runner.temp }}/tz-bazel-tool-cache
           key: tz-bazel-tool-${{ runner.os }}-${{ runner.arch }}-8.4.2-45e9388abf21d1107e146ea366ad080eb93cb6a5f3a4a3b048f78de0bc3faffa
 
-      - name: Upload the gated candidate (not a Release)
+      - name: Upload the gated unsigned candidate
         id: upload_candidate
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: TZ-1.0.9-ios-arm64-REQUIRES-FULL-RESIGN-${{ github.sha }}
-          path: ${{ runner.temp }}/tz-verified-output
+          name: TZ-1.0.10-ios-arm64-UNSIGNED-${{ github.sha }}
+          path: ${{ runner.temp }}/tz-release-output
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
@@ -239,11 +279,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release create "${GITHUB_REF_NAME}" "$TZ_VERIFIED_OUTPUT"/* \
+          gh release create "${GITHUB_REF_NAME}" "$TZ_RELEASE_OUTPUT"/* \
             --repo "$GITHUB_REPOSITORY" \
             --verify-tag \
-            --title "TZ iOS 1.0.9" \
-            --notes "TZ iOS 1.0.9：默认简体中文；完善 TZ 品牌显示；公开链接 tg.tianze8.cc 可由客户端识别；登录密码使用独立认证类型；继续固定 gramsrv TCP 端点及配套 RSA。此 Actions 产物为自签名候选包，安装前必须使用有效 Apple 证书完整重签名。"
+            --title "TZ iOS 1.0.10" \
+            --notes "TZ iOS 1.0.10：改为纯单体客户端，移除 Share、Widget、通知、Siri、屏幕广播和 Watch 扩展；主程序固定使用自身沙盒，不再申请 App Group、APNs 或 Associated Domains 权限，修复签名后启动黑屏。Release 提供保留一份描述文件模板的无签名 IPA，仍须使用有效 Apple 证书完整重签名。"
 
       - name: State the exact completion boundary
         shell: bash
@@ -255,6 +295,6 @@ jobs:
             echo "Artifact ID: ${{ steps.upload_candidate.outputs.artifact-id }}"
             echo "Artifact URL: ${{ steps.upload_candidate.outputs.artifact-url }}"
             echo
-            echo 'This is an Actions artifact, not a GitHub Release.'
-            echo 'It is fake-signed, requires complete re-signing, and was not installed or run.'
+            echo 'This is an unsigned Actions artifact, not a GitHub Release.'
+            echo 'It requires complete Apple signing and was not installed or run by Actions.'
           } >> "$GITHUB_STEP_SUMMARY"

@@ -14,24 +14,16 @@ import zipfile
 from pathlib import Path
 
 
-EXPECTED_VERSION = "1.0.9"
+EXPECTED_VERSION = "1.0.10"
 EXPECTED_BRAND = "TZ"
 EXPECTED_BUNDLE_ID = "com.tianze.tz"
-EXPECTED_APP_GROUP = "group.com.tianze.tz"
 EXPECTED_ENDPOINT_HOST = "tztg.tianze8.cc"
 EXPECTED_ENDPOINT_PORT = 2398
 EXPECTED_RSA_FRAGMENT = "MIIBCgKCAQEA7lyx4eQO/cyY9icmLgUQ2nxZ++xP+q1AQEfCRSvilbS72Qvyj/dJ"
 FAKE_TEAM_ID = "C67CF9S4VU"
 FAKE_SIGNING_AUTHORITY = "Authority=Apple Distribution: Telegram FZ-LLC (C67CF9S4VU)"
 FAKE_CERT_SHA256 = "eccdeb43dd50f4abdadf0dc6204c314298c16005567fcbf5d0a20a5761a93ba4"
-EXPECTED_EXTENSION_IDS = {
-    "com.tianze.tz.Share",
-    "com.tianze.tz.NotificationContent",
-    "com.tianze.tz.NotificationService",
-    "com.tianze.tz.Widget",
-    "com.tianze.tz.SiriIntents",
-    "com.tianze.tz.BroadcastUpload",
-}
+EXPECTED_EXTENSION_IDS: set[str] = set()
 RESTRICTED_ENTITLEMENTS = {
     "com.apple.developer.applesignin",
     "com.apple.developer.background-tasks.continued-processing.gpu",
@@ -101,21 +93,17 @@ def verify_entitlements(
         raise SystemExit(f"fake team identifier mismatch for {bundle_id}")
     if not require_team_identifier and team_identifier not in (None, FAKE_TEAM_ID):
         raise SystemExit(f"unexpected team identifier for {bundle_id}: {team_identifier!r}")
-    if entitlements.get("com.apple.security.application-groups") != [EXPECTED_APP_GROUP]:
-        raise SystemExit(f"App Group mismatch for {bundle_id}")
+    if entitlements.get("com.apple.security.application-groups") is not None:
+        raise SystemExit(f"single-target build unexpectedly requests App Groups for {bundle_id}")
     forbidden = sorted(RESTRICTED_ENTITLEMENTS.intersection(entitlements))
     if forbidden:
         raise SystemExit(f"restricted Apple entitlements found in {bundle_id}: {forbidden}")
     aps_environment = entitlements.get("aps-environment")
-    if is_main and aps_environment != "development":
-        raise SystemExit("main app fake APS entitlement must be development")
-    if not is_main and aps_environment is not None:
-        raise SystemExit(f"unexpected APS entitlement on extension {bundle_id}")
+    if aps_environment is not None:
+        raise SystemExit(f"single-target build unexpectedly requests APNs for {bundle_id}")
     associated_domains = entitlements.get("com.apple.developer.associated-domains")
-    if is_main and associated_domains != ["applinks:tg.tianze8.cc"]:
-        raise SystemExit("main app associated domain must be applinks:tg.tianze8.cc")
-    if not is_main and associated_domains is not None:
-        raise SystemExit(f"unexpected associated domain on extension {bundle_id}")
+    if associated_domains is not None:
+        raise SystemExit(f"single-target build unexpectedly requests Associated Domains for {bundle_id}")
 
 
 def verify_bundle(bundle: Path, main_bundle_id: str, report_root: Path, *, require_entitlements: bool) -> dict:
@@ -279,7 +267,7 @@ def main() -> int:
             verify_bundle(bundle, bundle_id, payload, require_entitlements=False) for bundle in frameworks
         )
 
-    final_ipa = output / "TZ-1.0.9-ios-arm64-REQUIRES-FULL-RESIGN.ipa"
+    final_ipa = output / "TZ-1.0.10-ios-arm64-REQUIRES-FULL-RESIGN.ipa"
     shutil.copy2(ipa, final_ipa)
     ipa_sha256 = sha256_file(final_ipa)
     (output / "SHA256SUMS.txt").write_text(
@@ -293,7 +281,8 @@ def main() -> int:
         "endpoint_static_check": "hostname_and_port_confirmed",
         "mtproto_rsa_static_check": "gramsrv_public_key_confirmed",
         "bundle_id": EXPECTED_BUNDLE_ID,
-        "app_group": EXPECTED_APP_GROUP,
+        "app_group": None,
+        "architecture": "single-target-private-container",
         "extensions": sorted(EXPECTED_EXTENSION_IDS),
         "bundle_identity": "TZ_BUNDLE_NAMESPACE_WITH_TEMPORARY_SELF_SIGNED_TEAM_NOT_LONG_TERM_APPLE_IDENTITY",
         "signature_status": "FAKE_SELF_SIGNED_REQUIRES_FULL_RESIGN_NOT_DIRECTLY_INSTALLABLE",
