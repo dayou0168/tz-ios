@@ -528,8 +528,34 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         let appVersion = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "unknown"
         
         let baseAppBundleId = Bundle.main.bundleIdentifier!
-        let appGroupName = "group.\(baseAppBundleId)"
-        let maybeAppGroupUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupName)
+        // TZ is intentionally distributed as a single-target client. Its
+        // signing identity cannot provide Apple App Groups, so the main app
+        // owns all persistent data in its private Application Support folder.
+        let applicationSupportUrl = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
+            "Library/Application Support",
+            isDirectory: true
+        )
+        let appGroupUrl = applicationSupportUrl.appendingPathComponent(
+            baseAppBundleId,
+            isDirectory: true
+        )
+        do {
+            try FileManager.default.createDirectory(
+                at: appGroupUrl,
+                withIntermediateDirectories: true
+            )
+        } catch {
+            self.mainWindow?.presentNative(UIAlertController(
+                title: nil,
+                message: "TZ could not initialize local storage.",
+                preferredStyle: .alert
+            ))
+            return true
+        }
+        NSLog("[TZ] Using private application container %@", appGroupUrl.path)
         
         let buildConfig = BuildConfig(baseAppBundleId: baseAppBundleId)
         self.buildConfig = buildConfig
@@ -640,11 +666,6 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             useBetaFeatures: !buildConfig.isAppStoreBuild,
             isICloudEnabled: buildConfig.isICloudEnabled
         )
-        
-        guard let appGroupUrl = maybeAppGroupUrl else {
-            self.mainWindow?.presentNative(UIAlertController(title: nil, message: "Error 2", preferredStyle: .alert))
-            return true
-        }
         
         var isDebugConfiguration = false
         #if DEBUG

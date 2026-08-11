@@ -493,12 +493,7 @@ icloud_fragment = "" if not telegram_enable_icloud else """
     telegram_icloud_environment="Production" if telegram_aps_environment == "production" else "Development"
 )
 
-associated_domains_fragment = """
-<key>com.apple.developer.associated-domains</key>
-<array>
-    <string>applinks:tg.tianze8.cc</string>
-</array>
-""" if telegram_bundle_id == "com.tianze.tz" else ("" if telegram_bundle_id not in official_bundle_ids else """
+associated_domains_fragment = "" if telegram_bundle_id == "com.tianze.tz" else ("" if telegram_bundle_id not in official_bundle_ids else """
 <key>com.apple.developer.associated-domains</key>
 <array>
     <string>applinks:telegram.me</string>
@@ -519,7 +514,7 @@ aps_fragment = "" if telegram_aps_environment == "" else """
 <string>{telegram_aps_environment}</string>
 """.format(telegram_aps_environment=telegram_aps_environment)
 
-app_groups_fragment = """
+app_groups_fragment = "" if telegram_bundle_id == "com.tianze.tz" else """
     <key>com.apple.security.application-groups</key>
     <array>
         <string>group.{telegram_bundle_id}</string>

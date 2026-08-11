@@ -1,11 +1,13 @@
 {
   "schema": 1,
   "bundle_root": "com.tianze.tz",
-  "app_group": "group.com.tianze.tz",
+  "app_group": null,
   "temporary_fake_team_id": "C67CF9S4VU",
   "signing_status": "SELF_SIGNED_REQUIRES_FULL_RESIGN_NOT_APPLE_AUTHORIZED",
   "targets": {
-    "main": "com.tianze.tz",
+    "main": "com.tianze.tz"
+  },
+  "extensions_removed": {
     "share": "com.tianze.tz.Share",
     "notification_content": "com.tianze.tz.NotificationContent",
     "notification_service": "com.tianze.tz.NotificationService",
@@ -22,19 +24,15 @@
     "port": 2398,
     "numeric_origin_addresses_allowed_in_tz_configuration": false
   },
+  "runtime_storage": {
+    "mode": "private Application Support/com.tianze.tz",
+    "app_group_required": false,
+    "architecture": "single-target"
+  },
   "fake_build_entitlements": {
     "main": [
       "application-identifier",
-      "aps-environment=development",
-      "com.apple.developer.associated-domains=applinks:tg.tianze8.cc",
       "com.apple.developer.team-identifier",
-      "com.apple.security.application-groups",
-      "keychain-access-groups"
-    ],
-    "extensions": [
-      "application-identifier",
-      "com.apple.developer.team-identifier",
-      "com.apple.security.application-groups",
       "keychain-access-groups"
     ]
   },

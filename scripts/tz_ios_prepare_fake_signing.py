@@ -20,7 +20,6 @@ from pathlib import Path
 
 
 TZ_BUNDLE_ID = "com.tianze.tz"
-TZ_APP_GROUP = "group.com.tianze.tz"
 FAKE_TEAM_ID = "C67CF9S4VU"
 FAKE_SIGNING_IDENTITY = "Apple Distribution: Telegram FZ-LLC (C67CF9S4VU)"
 
@@ -72,13 +71,9 @@ def sanitized_entitlements(suffix: str) -> dict:
     entitlements: dict[str, object] = {
         "application-identifier": f"{FAKE_TEAM_ID}.{bundle_id}",
         "com.apple.developer.team-identifier": FAKE_TEAM_ID,
-        "com.apple.security.application-groups": [TZ_APP_GROUP],
         "get-task-allow": False,
         "keychain-access-groups": [f"{FAKE_TEAM_ID}.*"],
     }
-    if suffix == "":
-        entitlements["aps-environment"] = "development"
-        entitlements["com.apple.developer.associated-domains"] = ["applinks:tg.tianze8.cc"]
     return entitlements
 
 
