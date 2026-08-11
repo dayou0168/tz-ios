@@ -524,12 +524,15 @@ def resolve_configuration(base_path, bazel_command_line: BazelCommandLine, argum
         provisioning_profiles_path=provisioning_path,
         additional_codesigning_output_path=additional_codesigning_output_path
     )
-    if codesigning_data.aps_environment is None:
+    disable_push_notifications = getattr(arguments, 'disablePushNotifications', False)
+    if codesigning_data.aps_environment is None and not disable_push_notifications:
         print('Could not find a valid aps-environment entitlement in the provided provisioning profiles')
         sys.exit(1)
 
+    aps_environment = '' if disable_push_notifications else codesigning_data.aps_environment
+
     if bazel_command_line is not None:
-        build_configuration.write_to_variables_file(bazel_path=bazel_command_line.bazel, use_xcode_managed_codesigning=codesigning_data.use_xcode_managed_codesigning, aps_environment=codesigning_data.aps_environment, path=configuration_repository_path + '/variables.bzl')
+        build_configuration.write_to_variables_file(bazel_path=bazel_command_line.bazel, use_xcode_managed_codesigning=codesigning_data.use_xcode_managed_codesigning, aps_environment=aps_environment, path=configuration_repository_path + '/variables.bzl')
 
     provisioning_profile_files = []
     for file_name in os.listdir(provisioning_path):
@@ -1111,6 +1114,12 @@ if __name__ == '__main__':
         action='store_true',
         default=False,
         help='Build only the main application target without app extensions.'
+    )
+    buildParser.add_argument(
+        '--disablePushNotifications',
+        action='store_true',
+        default=False,
+        help='Build without an aps-environment entitlement when the profile has no APNs permission.'
     )
     buildParser.add_argument(
         '--embedWatchApp',

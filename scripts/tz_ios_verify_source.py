@@ -94,9 +94,12 @@ def main() -> int:
     require("applicationSupportDirectory" in app_delegate, "private-container storage location is missing")
     require("containerURL(forSecurityApplicationGroupIdentifier: appGroupName)" not in app_delegate,
             "main app still depends on App Groups")
+    require("configuration.sharedContainerIdentifier" not in app_delegate,
+            "main app background URLSession still depends on App Groups")
 
     workflow = read(".github/workflows/tz-ios-macos-build.yml")
     require("--disableExtensions" in workflow, "single-target build must disable extensions")
+    require("--disablePushNotifications" in workflow, "unsigned build must not require APNs signing permission")
 
     print("TZ iOS source verification passed: 1.0.10 single-target private-container client, Chinese default, TZ branding, public links, explicit login password, gramsrv network/RSA")
     return 0

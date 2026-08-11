@@ -182,6 +182,7 @@ jobs:
             --codesigningInformationPath="$TZ_FAKE_SIGNING" \
             --configuration=release_arm64 \
             --disableExtensions \
+            --disablePushNotifications \
             --buildNumber="$TZ_BUILD_NUMBER" \
             --outputBuildArtifactsPath="$TZ_BUILD_OUTPUT" \
             --lock \
