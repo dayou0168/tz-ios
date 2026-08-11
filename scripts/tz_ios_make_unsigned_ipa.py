@@ -75,7 +75,13 @@ def load_bundle_identity(app: Path) -> tuple[str, str, str]:
     )
 
 
-def make_unsigned(input_ipa: Path, output_ipa: Path, report_path: Path) -> None:
+def make_unsigned(
+    input_ipa: Path,
+    output_ipa: Path,
+    report_path: Path,
+    *,
+    preserve_provisioning_profiles: bool,
+) -> None:
     for tool in ("codesign", "ditto", "file", "otool", "zip"):
         require_tool(tool)
     validate_archive_members(input_ipa)
@@ -97,8 +103,16 @@ def make_unsigned(input_ipa: Path, output_ipa: Path, report_path: Path) -> None:
         provisioning_profiles = [
             path for path in root.rglob("embedded.mobileprovision") if path.is_file()
         ]
-        for path in provisioning_profiles:
-            path.unlink()
+        if preserve_provisioning_profiles:
+            signing_targets = {apps[0], *apps[0].rglob("*.appex")}
+            profile_targets = {path.parent for path in provisioning_profiles}
+            if profile_targets != signing_targets:
+                raise SystemExit(
+                    "embedded provisioning profile set does not match the main app and extensions"
+                )
+        else:
+            for path in provisioning_profiles:
+                path.unlink()
 
         signature_directories = [
             path for path in root.rglob("_CodeSignature") if path.is_dir()
@@ -109,7 +123,9 @@ def make_unsigned(input_ipa: Path, output_ipa: Path, report_path: Path) -> None:
         macho_files = [path for path in root.rglob("*") if is_macho(path)]
         signed_macho_count = sum(1 for path in macho_files if remove_signature(path))
 
-        leftovers = list(root.rglob("embedded.mobileprovision")) + list(root.rglob("_CodeSignature"))
+        leftovers = list(root.rglob("_CodeSignature"))
+        if not preserve_provisioning_profiles:
+            leftovers += list(root.rglob("embedded.mobileprovision"))
         if leftovers:
             raise SystemExit(f"signing metadata remains: {[str(path) for path in leftovers]}")
         for path in macho_files:
@@ -129,7 +145,12 @@ def make_unsigned(input_ipa: Path, output_ipa: Path, report_path: Path) -> None:
         "bundle_id": bundle_id,
         "input_sha256": sha256_file(input_ipa),
         "mach_o_files_verified_unsigned": len(macho_files),
-        "provisioning_profiles_removed": len(provisioning_profiles),
+        "provisioning_profiles_preserved": (
+            len(provisioning_profiles) if preserve_provisioning_profiles else 0
+        ),
+        "provisioning_profiles_removed": (
+            0 if preserve_provisioning_profiles else len(provisioning_profiles)
+        ),
         "sha256": sha256_file(output_ipa),
         "signature_directories_removed": len(signature_directories),
         "signed_mach_o_files_stripped": signed_macho_count,
@@ -145,11 +166,21 @@ def main() -> int:
     parser.add_argument("input_ipa", type=Path)
     parser.add_argument("output_ipa", type=Path)
     parser.add_argument("report", type=Path)
+    parser.add_argument(
+        "--preserve-provisioning-profiles",
+        action="store_true",
+        help="retain embedded profiles as entitlement templates for a downstream signing platform",
+    )
     args = parser.parse_args()
     input_ipa = args.input_ipa.resolve()
     if not input_ipa.is_file():
         raise SystemExit(f"input IPA does not exist: {input_ipa}")
-    make_unsigned(input_ipa, args.output_ipa.resolve(), args.report.resolve())
+    make_unsigned(
+        input_ipa,
+        args.output_ipa.resolve(),
+        args.report.resolve(),
+        preserve_provisioning_profiles=args.preserve_provisioning_profiles,
+    )
     return 0
 
 
