@@ -429,7 +429,7 @@ final class AuthorizationSequenceCodeEntryControllerNode: ASDisplayNode, UITextF
         self.appleSignInAllowed = appleSignInAllowed
         
         if self.isTzLoginPassword {
-            self.currentOptionNode.attributedText = NSAttributedString(string: self.strings.LoginPassword_PasswordHelp, font: Font.regular(17.0), textColor: self.theme.list.itemPrimaryTextColor, paragraphAlignment: .center)
+            self.currentOptionNode.attributedText = NSAttributedString(string: self.strings.TZ_LoginPassword_Help, font: Font.regular(17.0), textColor: self.theme.list.itemPrimaryTextColor, paragraphAlignment: .center)
         } else {
             self.currentOptionNode.attributedText = authorizationCurrentOptionText(codeType, phoneNumber: self.phoneNumber, email: self.email, strings: self.strings, primaryColor: self.theme.list.itemPrimaryTextColor, accentColor: self.theme.list.itemAccentColor)
         }
