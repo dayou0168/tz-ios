@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail closed unless the checkout is the auditable TZ iOS 1.0.10 variant."""
+"""Fail closed unless the checkout is the auditable TZ iOS 1.0.11 variant."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def main() -> int:
     identities = json.loads(read("TZ_IOS_IDENTITIES.json"))
     versions = json.loads(read("versions.json"))
     require(lock.get("commit") == EXPECTED_UPSTREAM, "upstream lock mismatch")
-    require(versions.get("app") == "1.0.10", "TZ app version must be 1.0.10")
+    require(versions.get("app") == "1.0.11", "TZ app version must be 1.0.11")
     require(identities.get("bundle_root") == EXPECTED_BUNDLE_ID, "bundle root mismatch")
     require(identities.get("app_group") is None, "single-target build must not declare an App Group")
     require(identities.get("targets") == {"main": EXPECTED_BUNDLE_ID}, "single-target manifest mismatch")
@@ -106,7 +106,7 @@ def main() -> int:
     require("--disableExtensions" in workflow, "single-target build must disable extensions")
     require("--disablePushNotifications" in workflow, "unsigned build must not require APNs signing permission")
 
-    print("TZ iOS source verification passed: 1.0.10 single-target private-container client, working Chinese default, TZ branding, public links, explicit login password, gramsrv network/RSA")
+    print("TZ iOS source verification passed: 1.0.11 single-target private-container client, working Chinese default, TZ branding, public links, explicit login password, gramsrv network/RSA")
     return 0
 
 
