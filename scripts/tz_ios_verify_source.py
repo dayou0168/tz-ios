@@ -82,6 +82,11 @@ def main() -> int:
             "default language is not Simplified Chinese")
     require('"TZ.LoginPassword.Title" = "修改登录密码";' in read("Telegram/Telegram-iOS/zh-Hans.lproj/Localizable.strings"),
             "Chinese login-password strings are missing")
+    require("self.strings.TZ_LoginPassword_Help" in read("submodules/AuthorizationUI/Sources/AuthorizationSequenceCodeEntryControllerNode.swift"),
+            "login-password screen does not use the TZ-specific help text")
+    presentation_data = read("submodules/TelegramPresentationData/Sources/PresentationData.swift")
+    require('forLocalization: "zh-Hans"' in presentation_data and "bundledDict.merge(primaryDict" in presentation_data,
+            "saved Simplified Chinese settings do not fall back to the bundled language pack")
 
     for strings_path in (ROOT / "Telegram" / "Telegram-iOS").glob("*.lproj/*.strings"):
         for line_number, line in enumerate(strings_path.read_text(encoding="utf-8").splitlines(), 1):
@@ -101,7 +106,7 @@ def main() -> int:
     require("--disableExtensions" in workflow, "single-target build must disable extensions")
     require("--disablePushNotifications" in workflow, "unsigned build must not require APNs signing permission")
 
-    print("TZ iOS source verification passed: 1.0.10 single-target private-container client, Chinese default, TZ branding, public links, explicit login password, gramsrv network/RSA")
+    print("TZ iOS source verification passed: 1.0.10 single-target private-container client, working Chinese default, TZ branding, public links, explicit login password, gramsrv network/RSA")
     return 0
 
 

@@ -152,6 +152,34 @@ public func dictFromLocalization(_ value: Localization) -> [String: String] {
     return dict
 }
 
+private func presentationStrings(localizationSettings: LocalizationSettings, groupingSeparator: String) -> PresentationStrings {
+    var primaryDict = dictFromLocalization(localizationSettings.primaryComponent.localization)
+    let normalizedLanguageCode = localizationSettings.primaryComponent.languageCode.lowercased().replacingOccurrences(of: "_", with: "-")
+    if normalizedLanguageCode == "zh-hans" || normalizedLanguageCode == "zh-cn" {
+        let bundledPath = getAppBundle().path(forResource: "Localizable", ofType: "strings", inDirectory: nil, forLocalization: "zh-Hans")!
+        var bundledDict = NSDictionary(contentsOf: URL(fileURLWithPath: bundledPath)) as! [String: String]
+        bundledDict.merge(primaryDict, uniquingKeysWith: { _, downloaded in downloaded })
+        primaryDict = bundledDict
+    }
+    return PresentationStrings(
+        primaryComponent: PresentationStrings.Component(
+            languageCode: localizationSettings.primaryComponent.languageCode,
+            localizedName: localizationSettings.primaryComponent.localizedName,
+            pluralizationRulesCode: localizationSettings.primaryComponent.customPluralizationCode,
+            dict: primaryDict
+        ),
+        secondaryComponent: localizationSettings.secondaryComponent.flatMap({ component in
+            PresentationStrings.Component(
+                languageCode: component.languageCode,
+                localizedName: component.localizedName,
+                pluralizationRulesCode: component.customPluralizationCode,
+                dict: dictFromLocalization(component.localization)
+            )
+        }),
+        groupingSeparator: groupingSeparator
+    )
+}
+
 private func currentDateTimeFormat() -> PresentationDateTimeFormat {
     let locale = Locale.current
     let dateFormatter = DateFormatter()
@@ -416,7 +444,7 @@ public func currentPresentationDataAndSettings(accountManager: AccountManager<Te
         let dateTimeFormat = currentDateTimeFormat()
         let stringsValue: PresentationStrings
         if let localizationSettings = localizationSettings {
-            stringsValue = PresentationStrings(primaryComponent: PresentationStrings.Component(languageCode: localizationSettings.primaryComponent.languageCode, localizedName: localizationSettings.primaryComponent.localizedName, pluralizationRulesCode: localizationSettings.primaryComponent.customPluralizationCode, dict: dictFromLocalization(localizationSettings.primaryComponent.localization)), secondaryComponent: localizationSettings.secondaryComponent.flatMap({ PresentationStrings.Component(languageCode: $0.languageCode, localizedName: $0.localizedName, pluralizationRulesCode: $0.customPluralizationCode, dict: dictFromLocalization($0.localization)) }), groupingSeparator: dateTimeFormat.groupingSeparator)
+            stringsValue = presentationStrings(localizationSettings: localizationSettings, groupingSeparator: dateTimeFormat.groupingSeparator)
         } else {
             stringsValue = defaultPresentationStrings
         }
@@ -823,7 +851,7 @@ public func updatedPresentationData(accountManager: AccountManager<TelegramAccou
                         let dateTimeFormat = currentDateTimeFormat()
                         let stringsValue: PresentationStrings
                         if let localizationSettings = localizationSettings {
-                            stringsValue = PresentationStrings(primaryComponent: PresentationStrings.Component(languageCode: localizationSettings.primaryComponent.languageCode, localizedName: localizationSettings.primaryComponent.localizedName, pluralizationRulesCode: localizationSettings.primaryComponent.customPluralizationCode, dict: dictFromLocalization(localizationSettings.primaryComponent.localization)), secondaryComponent: localizationSettings.secondaryComponent.flatMap({ PresentationStrings.Component(languageCode: $0.languageCode, localizedName: $0.localizedName, pluralizationRulesCode: $0.customPluralizationCode, dict: dictFromLocalization($0.localization)) }), groupingSeparator: dateTimeFormat.groupingSeparator)
+                            stringsValue = presentationStrings(localizationSettings: localizationSettings, groupingSeparator: dateTimeFormat.groupingSeparator)
                         } else {
                             stringsValue = defaultPresentationStrings
                         }
